@@ -1,0 +1,28 @@
+#pragma once
+
+#include "Types.h"
+#include "DataBinding.h"
+
+struct Workspace
+{
+	template <typename FirstType, typename... Remaining>
+	void AddData( FirstType & firstData, Remaining&... data )
+	{
+		AddData( data... );
+	}
+
+	void AddData( ) { }
+};
+
+class Workflow
+{
+public:
+	virtual ~Workflow( ) { }
+
+	virtual void Run( ) = 0;
+
+protected:
+
+	//void AddIngress( DataBinding * dataIngress );
+	//void AddOutgress( DataBinding * dataOutgress );
+};
