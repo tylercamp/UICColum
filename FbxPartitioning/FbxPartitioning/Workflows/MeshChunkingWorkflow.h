@@ -1,12 +1,16 @@
 #pragma once
 
+#include <iostream>
+
 #include "../Workflow.h"
 #include "../Types.h"
 
-class DataGroupingWorkflow : public Workflow
+class MeshChunkingWorkflow : public Workflow
 {
 	IngressDataBinding<triangle> m_Mesh;
 	IngressDataBinding<int> m_Tags;
+	IngressDataBinding<int> m_PartitionCounts;
+	IngressDataBinding<mesh_partition_descriptor> m_Partitions;
 	OutgressDataBinding<mesh_chunk> m_PartitionedMesh;
 
 	void chunk_mesh( gpu_triangle_array mesh, cpu_chunk_array * out_chunks )
@@ -36,8 +40,9 @@ class DataGroupingWorkflow : public Workflow
 	}
 
 public:
-	DataGroupingWorkflow( IngressDataBinding<triangle> mesh, IngressDataBinding<int> tags, OutgressDataBinding<mesh_chunk> partitionedMesh ) :
-		m_Mesh( mesh ), m_Tags( tags ),
+	MeshChunkingWorkflow( IngressDataBinding<triangle> mesh, IngressDataBinding<int> tags, IngressDataBinding<int> partitionCounts, IngressDataBinding<mesh_partition_descriptor> partitions,
+						  OutgressDataBinding<mesh_chunk> partitionedMesh ) :
+		m_Mesh( mesh ), m_Tags( tags ), m_PartitionCounts( partitionCounts ), m_Partitions( partitions ),
 		m_PartitionedMesh( partitionedMesh )
 	{
 
@@ -46,7 +51,11 @@ public:
 	void Run( )
 	{
 		//	TODO - Could parallelize (sort data by partition?)
-		cpu_chunk_array & chunks = *out_chunks;
+		auto & mesh = m_Mesh.Resolve<gpu_triangle_array>( );
+		auto & partitions = m_Partitions.Resolve<cpu_partition_descriptor_array>( );
+		auto & partitionSizes = m_PartitionCounts.Resolve<cpu_index_array>( );
+		
+		cpu_chunk_array chunks;
 		chunks.resize( partitions.size( ) );
 
 		for( int c = 0; c < chunks.size( ); c++ )
@@ -56,6 +65,8 @@ public:
 			chunks[c].tris.reserve( partitionSizes[c] );
 		}
 
-		cpu::chunk_mesh( mesh, &chunks );
+		chunk_mesh( mesh, &chunks );
+
+		m_PartitionedMesh.Assign( chunks );
 	}
 };

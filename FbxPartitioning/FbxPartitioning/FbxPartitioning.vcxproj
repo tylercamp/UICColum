@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -169,7 +169,7 @@
     <ClInclude Include="Workflow.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="DataBinding.h" />
-    <ClInclude Include="Workflows\DataGroupingWorkflow.h" />
+    <ClInclude Include="Workflows\MeshChunkingWorkflow.h" />
     <ClInclude Include="Workflows\FbxImportWorkflow.h" />
     <ClInclude Include="Workflows\FbxChunkExportWorkflow.h" />
     <ClInclude Include="Workflows\GatherMeshBoundsWorkflow.h" />

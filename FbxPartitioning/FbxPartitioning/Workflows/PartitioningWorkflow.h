@@ -33,6 +33,8 @@ class PartitioningWorkflow : public Workflow
 	IngressDatumBinding<float_3> m_MinExtents;
 	IngressDatumBinding<float_3> m_MaxExtents;
 	OutgressDataBinding<int> m_MeshTags;
+	OutgressDataBinding<mesh_partition_descriptor> m_MeshPartitions;
+	OutgressDataBinding<int> m_PartitionSizes;
 
 	//	Splits on 3D space
 	cpu_partition_descriptor_array split_partition( mesh_partition_descriptor & partition, int num_splits )
@@ -132,9 +134,10 @@ class PartitioningWorkflow : public Workflow
 	}
 
 public:
-	PartitioningWorkflow( IngressDataBinding<triangle> mesh, IngressDatumBinding<float_3> minExtents, IngressDatumBinding<float_3> maxExtents, OutgressDataBinding<int> meshTags ) :
+	PartitioningWorkflow( IngressDataBinding<triangle> mesh, IngressDatumBinding<float_3> minExtents, IngressDatumBinding<float_3> maxExtents,
+						  OutgressDataBinding<int> meshTags, OutgressDataBinding<mesh_partition_descriptor> partitions, OutgressDataBinding<int> partitionCounts ) :
 		m_Mesh( mesh ), m_MinExtents( minExtents ), m_MaxExtents( maxExtents ),
-		m_MeshTags( meshTags )
+		m_MeshTags( meshTags ), m_MeshPartitions( partitions ), m_PartitionSizes( partitionCounts )
 	{
 
 	}
@@ -166,7 +169,7 @@ public:
 			gpu_index_array dev_meshtags( mesh.extent );
 			dev_meshtags.discard_data( );
 
-			tag_mesh_partitions( partitions, mesh, dev_meshtags );
+			gpu_tag_mesh_partitions( partitions, mesh, dev_meshtags );
 			//cpu::tag_mesh_partitions( partitions, cpu_tris, meshtags );
 
 			dev_meshtags.synchronize( );
@@ -210,7 +213,7 @@ public:
 				if( violation > 0 )
 				{
 					//	Break partition
-					auto missingPartitions = cpu::split_partition( partitions[i], axisSplits );
+					auto missingPartitions = split_partition( partitions[i], axisSplits );
 					for( auto p : missingPartitions )
 						newPartitions.emplace_back( p );
 
@@ -241,6 +244,8 @@ public:
 			if( schemeWasValid )
 			{
 				m_MeshTags.Assign( dev_meshtags );
+				m_MeshPartitions.Assign( partitions );
+				m_PartitionSizes.Assign( partitionSizes );
 				break;
 			}
 

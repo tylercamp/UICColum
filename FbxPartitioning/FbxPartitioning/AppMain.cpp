@@ -3,8 +3,6 @@
 
 #include <iostream>
 
-#include "MshReader.h"
-
 #include "Types.h"
 #include "Utilities.h"
 #include "WorkflowScheduler.h"
@@ -15,7 +13,7 @@
 #include "Workflows/PartitioningWorkflow.h"
 #include "Workflows/TriangulationWorkflow.h"
 #include "Workflows/RenderWorkflow.h"
-#include "Workflows/DataGroupingWorkflow.h"
+#include "Workflows/MeshChunkingWorkflow.h"
 #include "Workflows/GatherMeshBoundsWorkflow.h"
 
 #ifdef main
@@ -45,7 +43,7 @@
 
 //	MAIN PROCESSING FUNCTION
 
-void process( std::string file )
+void process( )
 {
 	auto start = clock( );
 
@@ -57,8 +55,12 @@ void process( std::string file )
 	DatumBinding<float_3> meshExtentsMin, meshExtentsMax;
 
 	DataBinding<int> meshTags;
+	DataBinding<mesh_partition_descriptor> meshPartitions;
 
+	DataBinding<int> partitionMembershipCounts;
 	DataBinding<mesh_chunk> partitionedMesh;
+
+
 
 	auto ws = std::make_shared<Workspace>( );
 	ws->AddData( points, indices, mesh, meshTags, partitionedMesh );
@@ -66,13 +68,13 @@ void process( std::string file )
 	WorkflowScheduler sched;
 	sched.SetWorkspace( ws );
 
-	sched.AddWorkflow( std::make_unique<Workflow>( new FbxImportWorkflow( "bsArteries.fbx", &points, &indices ) ) );
-	sched.AddWorkflow( std::make_unique<Workflow>( new TriangulationWorkflow( points, indices, &mesh ) ) );
-	//sched.AddWorkflow( std::make_unique<Workflow>( new RenderWorkflow( mesh ) ) );
-	sched.AddWorkflow( std::make_unique<Workflow>( new GatherMeshBoundsWorkflow( mesh, &meshExtentsMin, &meshExtentsMax ) ) );
-	sched.AddWorkflow( std::make_unique<Workflow>( new PartitioningWorkflow( mesh, meshExtentsMin, meshExtentsMax, &meshTags ) ) );
-	sched.AddWorkflow( std::make_unique<Workflow>( new DataGroupingWorkflow( mesh, meshTags, &partitionedMesh ) ) );
-	sched.AddWorkflow( std::make_unique<Workflow>( new FbxChunkExportWorkflow( "bsArteries", partitionedMesh ) ) );
+	sched.AddWorkflow( new FbxImportWorkflow( "bsArteries.fbx", &points, &indices ) );
+	sched.AddWorkflow( new TriangulationWorkflow( points, indices, &mesh ) );
+	//sched.AddWorkflow( new RenderWorkflow( mesh ) );
+	sched.AddWorkflow( new GatherMeshBoundsWorkflow( mesh, &meshExtentsMin, &meshExtentsMax ) );
+	sched.AddWorkflow( new PartitioningWorkflow( mesh, meshExtentsMin, meshExtentsMax, &meshTags, &meshPartitions, &partitionMembershipCounts ) );
+	sched.AddWorkflow( new MeshChunkingWorkflow( mesh, meshTags, partitionMembershipCounts, meshPartitions, &partitionedMesh ) );
+	sched.AddWorkflow( new FbxChunkExportWorkflow( "bsArteries", partitionedMesh ) );
 
 	sched.Run( );
 
@@ -91,9 +93,11 @@ int main( )
 	//MshReader mshReader( "IanArteries5.GAMBIT.msh" );
 	//return 0;
 
+	process( );
+
 	//process( "bsArteries.fbx" );
 	//process( "bsCSF.fbx" );
-	process( "IanArteries5.GAMBIT.msh" );
+	//process( "IanArteries5.GAMBIT.msh" );
 	/*process( "bsGray.fbx" );
 	process( "bsScalp.fbx" );
 	process( "bsSkull.fbx" );

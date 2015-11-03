@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "../MshReader.h"
+
 #include "../Workflow.h"
 #include "../Types.h"
 

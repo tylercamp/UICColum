@@ -3,7 +3,10 @@
 #include "../Workflow.h"
 #include "../Types.h"
 
+#include <Windows.h>
 #include <SDL.h>
+#include <gl/GL.h>
+#include <gl/GLU.h>
 
 #define PREVIEW_MESH_HIDPI
 

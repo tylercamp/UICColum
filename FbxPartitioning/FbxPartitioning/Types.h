@@ -18,13 +18,21 @@ using concurrency::graphics::float_3;
 
 /* Types */
 
+//	Convenience getter function
+#define get(type, name)		\
+	__declspec(property(get = get_##name)) type name;	\
+	inline type get_##name( ) const
+
+#define vget(type, name)		\
+	__declspec(property(get = get_##name)) type name;	\
+	virtual inline type get_##name( ) const
+
 struct triangle
 {
 	float_3 a, b, c;
 
 	//	float_3 center;
-	__declspec( property( get = get_center ) ) float_3 center;
-	float_3 get_center( ) const restrict( amp, cpu )
+	get( float_3, center ) restrict( amp, cpu )
 	{
 		return ( a + b + c ) * 0.33333f;
 	}

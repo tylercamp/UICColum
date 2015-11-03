@@ -3,6 +3,7 @@
 #include "Types.h"
 #include "DataBinding.h"
 
+//	Will be useful if the scheduler gets more advanced features
 struct Workspace
 {
 	template <typename FirstType, typename... Remaining>
@@ -13,6 +14,8 @@ struct Workspace
 
 	void AddData( ) { }
 };
+
+
 
 class Workflow
 {
