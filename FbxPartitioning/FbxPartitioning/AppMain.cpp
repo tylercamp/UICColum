@@ -43,7 +43,7 @@
 
 //	MAIN PROCESSING FUNCTION
 
-void process( )
+void process( const std::string & file )
 {
 	auto start = clock( );
 
@@ -68,13 +68,21 @@ void process( )
 	WorkflowScheduler sched;
 	sched.SetWorkspace( ws );
 
-	sched.AddWorkflow( new FbxImportWorkflow( "bsArteries.fbx", &points, &indices ) );
+	//	Determine loading method
+	std::string fileExt = getFileExtension( file );
+	if( fileExt == "fbx" )
+		sched.AddWorkflow( new FbxImportWorkflow( file, &points, &indices ) );
+	else if( fileExt == "msh" )
+		sched.AddWorkflow( new MshImportWorkflow( file, &points, &indices, nullptr ) );
+	else
+		__debugbreak( );
+
 	sched.AddWorkflow( new TriangulationWorkflow( points, indices, &mesh ) );
 	//sched.AddWorkflow( new RenderWorkflow( mesh ) );
 	sched.AddWorkflow( new GatherMeshBoundsWorkflow( mesh, &meshExtentsMin, &meshExtentsMax ) );
 	sched.AddWorkflow( new PartitioningWorkflow( mesh, meshExtentsMin, meshExtentsMax, &meshTags, &meshPartitions, &partitionMembershipCounts ) );
 	sched.AddWorkflow( new MeshChunkingWorkflow( mesh, meshTags, partitionMembershipCounts, meshPartitions, &partitionedMesh ) );
-	sched.AddWorkflow( new FbxChunkExportWorkflow( "bsArteries", partitionedMesh ) );
+	sched.AddWorkflow( new FbxChunkExportWorkflow( getFileName( file ), partitionedMesh ) );
 
 	sched.Run( );
 
@@ -93,11 +101,9 @@ int main( )
 	//MshReader mshReader( "IanArteries5.GAMBIT.msh" );
 	//return 0;
 
-	process( );
-
 	//process( "bsArteries.fbx" );
 	//process( "bsCSF.fbx" );
-	//process( "IanArteries5.GAMBIT.msh" );
+	process( "IanArteries5.GAMBIT.msh" );
 	/*process( "bsGray.fbx" );
 	process( "bsScalp.fbx" );
 	process( "bsSkull.fbx" );

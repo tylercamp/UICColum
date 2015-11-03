@@ -90,6 +90,16 @@ std::string formatTime( long ms )
 	return result.str( );
 }
 
+std::string getFileName( const std::string & filepath )
+{
+
+}
+
+std::string getFileExtension( const std::string & filepath )
+{
+
+}
+
 void pause( )
 {
 	std::string str;
