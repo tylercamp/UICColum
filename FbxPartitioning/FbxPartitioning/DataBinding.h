@@ -48,14 +48,28 @@ public:
 
 
 
-	std::vector<T> & AsStandardVector( )
+	vget( std::vector<T> &, AsStandardVector )
 	{
+		if( CurrentStorageType != StandardVector )
+			__debugbreak( );
+
 		return *(m_Storage->asVector);
 	}
 
-	concurrency::array_view<T, 1> & AsArrayView( )
+	vget( concurrency::array_view<T> &, AsArrayView )
 	{
+		if( CurrentStorageType != ConcurrencyArrayView )
+			__debugbreak( );
+
 		return *(m_Storage->asArrayView);
+	}
+
+	vget( T &, AsSingleValue )
+	{
+		if( CurrentStorageType != SingleValue )
+			__debugbreak( );
+
+		return m_Storage->asSingleValue;
 	}
 
 	enum StorageType
@@ -97,13 +111,23 @@ public:
 	template <>
 	std::vector<T> & Resolve<std::vector<T>>( )
 	{
-		return ResolvedContract->AsStandardVector( );
+		throw nullptr;
+
+		return ResolvedContract->AsStandardVector;
 	}
 
 	template <>
 	concurrency::array_view<T, 1> & Resolve<concurrency::array_view<T, 1>>( )
 	{
-		return ResolvedContract->AsArrayView( );
+		throw nullptr;
+
+		if( !ContractIsInitialized ) {
+			if( m_Contract != nullptr )
+				delete m_Contract;
+			m_Contract = nullptr;
+		}
+
+		return ResolvedContract->AsArrayView;
 	}
 
 
@@ -123,6 +147,7 @@ public:
 		if( m_Contract != nullptr ) {
 			delete m_Contract;
 			m_Contract = nullptr;
+
 		}
 
 		m_Contract = new ResolvedDataBindingContract<T>( data );
@@ -153,18 +178,31 @@ public:
 
 	T & Resolve( )
 	{
-		throw nullptr;
+		if( !ContractIsInitialized ) {
+			if( m_Contract != nullptr )
+				delete m_Contract;
+			m_Contract = nullptr;
+			m_Contract = new ResolvedDataBindingContract<T>( T( ) );
+		}
+
+		return ResolvedContract->AsSingleValue;
 	}
 
 
 	void Assign( const T & value )
 	{
-		if( m_Contract != nullptr ) {
-			delete m_Contract;
-			m_Contract = nullptr;
+		if( ContractIsInitialized )
+		{
+			if( m_Contract != nullptr ) {
+				delete m_Contract;
+				m_Contract = nullptr;
+			}
+
+			m_Contract = new ResolvedDataBindingContract<T>( T( ) );
 		}
 
-		m_Contract = new ResolvedDataBindingContract<T>( value );
+		auto & valueStorage = ResolvedContract->AsSingleValue;
+		valueStorage = value;
 	}
 
 protected:
@@ -209,7 +247,7 @@ class IngressDatumBinding : public DatumBinding<T>
 public:
 	IngressDatumBinding( const DatumBinding & source )
 	{
-		//this->m_Contract = source.m_Contract;
+		this->m_Contract = source.m_Contract;
 	}
 };
 
@@ -219,6 +257,6 @@ class OutgressDatumBinding : public DatumBinding<T>
 public:
 	OutgressDatumBinding( DatumBinding * source )
 	{
-		//this->m_Contract = source->m_Contract;
+		this->m_Contract = source->m_Contract;
 	}
 };

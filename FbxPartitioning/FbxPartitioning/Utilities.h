@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <iostream>
+#include <sstream>
 
 /* Utility functions */
 
@@ -92,12 +94,27 @@ std::string formatTime( long ms )
 
 std::string getFileName( const std::string & filepath )
 {
+	std::string fpath = filepath;
+	while( fpath.find( '\\' ) != fpath.npos )
+		fpath = fpath.replace( fpath.find( '\\' ), 1, "/" );
 
+	int extPos = filepath.find_last_of( '.' );
+	int startPos = filepath.find_last_of( '/' );
+
+	return fpath.substr( startPos, extPos - startPos + 1 );
 }
 
 std::string getFileExtension( const std::string & filepath )
 {
+	std::string fpath = filepath;
+	while( fpath.find( '\\' ) != fpath.npos )
+		fpath = fpath.replace( fpath.find( '\\' ), 1, "/" );
 
+	int extPos = filepath.find_last_of( '.' );
+	if( extPos < 0 )
+		return "";
+
+	return filepath.substr( extPos );
 }
 
 void pause( )

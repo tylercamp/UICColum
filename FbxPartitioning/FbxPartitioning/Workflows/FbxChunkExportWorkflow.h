@@ -1,6 +1,8 @@
 #pragma once
 
 #include <FbxSdk.h>
+#include <fstream>
+#include <iostream>
 
 #include "../Workflow.h"
 #include "../Types.h"
