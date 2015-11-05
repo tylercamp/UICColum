@@ -14,11 +14,8 @@ UIC Data/
 
 # Build results
 
-[Dd]ebug/
-[Rr]elease/
-x64/
+bin/
 build/
-[Bb]in/
 [Oo]bj/
 
 # Enable "build/" folder in the NuGet Packages folder since NuGet packages use it for MSBuild targets
