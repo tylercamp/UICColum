@@ -64,7 +64,7 @@ public:
 
 		parallel_for_each(
 			base_extent.tile<TILE_SIZE>( ).pad( ),
-			[=]( tiled_index<TILE_SIZE> t_idx ) restrict( amp )
+			[dev_tris, mins, maxs]( tiled_index<TILE_SIZE> t_idx ) restrict( amp )
 		{
 			tile_static float_3 tile_ranges[TILE_SIZE];
 

@@ -111,7 +111,7 @@ class PartitioningWorkflow : public Workflow
 
 		segmented_parallel_for_each(
 			mesh,
-			[=]( index<1> idx ) restrict( amp )
+			[dev_partitions, mesh, out_tags, num_partitions]( index<1> idx ) restrict( amp )
 		{
 			float_3 tri_center = mesh[idx].center;
 
@@ -185,7 +185,7 @@ public:
 			{
 				int partitionIndex = dev_meshtags[i];
 #ifdef _DEBUG
-				triangle tri = dev_mesh[i];
+				triangle tri = cpu_tris[i];
 				if( partitionIndex < 0 )
 					__debugbreak( );
 #endif

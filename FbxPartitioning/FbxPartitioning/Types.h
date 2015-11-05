@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+#define NOT_YET_IMPLEMENTED( ) __debugbreak( )
+
 
 using std::uint32_t;
 using concurrency::index;
@@ -59,21 +61,6 @@ struct mesh_chunk
 	int num_tris;
 	std::vector<triangle> tris;
 	mesh_partition_descriptor bounds;
-
-	mesh_chunk( )
-	{
-	}
-
-	mesh_chunk( mesh_partition_descriptor desc, const std::vector<triangle> & source )
-	{
-		bounds = desc;
-
-		for( auto tri : source )
-			if( bounds.contains_point( tri.center ) )
-				tris.push_back( tri );
-
-		num_tris = tris.size( );
-	}
 };
 
 //	Describe CPU v GPU types

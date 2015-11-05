@@ -58,6 +58,7 @@ class FbxChunkExportWorkflow : public Workflow
 		std::ofstream file( filename );
 
 		//file << "FbxPartitioning"
+		NOT_YET_IMPLEMENTED( );
 
 		file.close( );
 	}

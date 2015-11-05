@@ -48,7 +48,15 @@ public:
 
 			for( std::size_t j = 0; j < faceData.data.size( ); j++ )
 			{
-				//	How is this thing triangulated?
+				auto & face = faceData.data[j];
+
+				cpu_indices.push_back( face.point_indices[0] );
+				cpu_indices.push_back( face.point_indices[1] );
+				cpu_indices.push_back( face.point_indices[2] );
+
+				cpu_indices.push_back( face.point_indices[0] );
+				cpu_indices.push_back( face.point_indices[3] );
+				cpu_indices.push_back( face.point_indices[2] );
 			}
 		}
 

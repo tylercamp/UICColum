@@ -49,8 +49,8 @@ void process( const std::string & file )
 
 	std::cout << "\n\n OPERATING ON " << file << std::endl;
 
-	DataBinding<float_3> points;
-	DataBinding<int> indices;
+	DataBinding<float_3> points, volumeData;
+	DataBinding<int> indices, innerIndices;
 	DataBinding<triangle> mesh;
 	DatumBinding<float_3> meshExtentsMin, meshExtentsMax;
 
@@ -73,7 +73,7 @@ void process( const std::string & file )
 	if( fileExt == "fbx" )
 		sched.AddWorkflow( new FbxImportWorkflow( file, &points, &indices ) );
 	else if( fileExt == "msh" )
-		sched.AddWorkflow( new MshImportWorkflow( file, &points, &indices, nullptr ) );
+		sched.AddWorkflow( new MshImportWorkflow( file, &points, &indices, &innerIndices ) );
 	else
 		__debugbreak( );
 

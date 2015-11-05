@@ -100,8 +100,12 @@ std::string getFileName( const std::string & filepath )
 
 	int extPos = filepath.find_last_of( '.' );
 	int startPos = filepath.find_last_of( '/' );
+	if( startPos < 0 )
+		startPos = 0;
+	if( extPos < 0 )
+		extPos = fpath.size( );
 
-	return fpath.substr( startPos, extPos - startPos + 1 );
+	return fpath.substr( startPos, extPos - startPos );
 }
 
 std::string getFileExtension( const std::string & filepath )
@@ -114,7 +118,7 @@ std::string getFileExtension( const std::string & filepath )
 	if( extPos < 0 )
 		return "";
 
-	return filepath.substr( extPos );
+	return filepath.substr( extPos + 1 );
 }
 
 void pause( )

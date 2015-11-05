@@ -15,6 +15,7 @@ public:
 	void SetWorkspace( std::shared_ptr<Workspace> workspace )
 	{
 		//	TODO
+		//NOT_YET_IMPLEMENTED( );
 	}
 
 	void AddWorkflow( Workflow * workflow )

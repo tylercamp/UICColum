@@ -23,26 +23,48 @@ public:
 
 	ResolvedDataBindingContract( const T & value )
 	{
-		throw nullptr;
+		m_Storage = new StorageUnion( );
+		m_Storage->asSingleValue = new T( value );
 	}
 
 	ResolvedDataBindingContract( const DataBindingContract<T> & ref )
 	{
-		throw nullptr;
+		NOT_YET_IMPLEMENTED( );
 	}
 
 	ResolvedDataBindingContract( std::vector<T> & data )
 	{
-		//m_Storage
-		throw nullptr;
+		m_Storage = new StorageUnion( );
+		m_Storage->asVector = new std::vector<T>( data );
 	}
 
 	ResolvedDataBindingContract( concurrency::array_view<T> & data )
 	{
-		throw nullptr;
+		m_Storage = new StorageUnion( );
+		m_Storage->asArrayView = new concurrency::array_view<T>( data );
 	}
 
-	virtual ~ResolvedDataBindingContract( ) { }
+	virtual ~ResolvedDataBindingContract( )
+	{
+		if( m_Storage == nullptr )
+			NOT_YET_IMPLEMENTED( ); // should never happen
+
+		switch( CurrentStorageType )
+		{
+		case(SingleValue) :
+			delete m_Storage->asSingleValue;
+			break;
+		case( StandardVector ):
+			delete m_Storage->asVector;
+			break;
+		case( ConcurrencyArrayView ):
+			//delete m_Storage->asArrayView;
+			break;
+		}
+
+		free( m_Storage );
+		m_Storage = nullptr;
+	}
 
 	vget( bool, IsResolved ) override { return true; }
 
@@ -69,7 +91,7 @@ public:
 		if( CurrentStorageType != SingleValue )
 			__debugbreak( );
 
-		return m_Storage->asSingleValue;
+		return *(m_Storage->asSingleValue);
 	}
 
 	enum StorageType
@@ -86,8 +108,7 @@ private:
 #pragma warning( push )
 #pragma warning( disable: 4624 ) // destructor was implicitly defined as deleted because a base class destructor is inaccessible or deleted
 	union StorageUnion {
-		T asSingleValue;
-
+		T * asSingleValue;
 		std::vector<T> * asVector;
 		concurrency::array_view<T, 1> * asArrayView;
 		concurrency::array<T, 1> * asArray;
@@ -107,24 +128,42 @@ public:
 
 	template <typename container>
 	container & Resolve( );
+
+	template <typename container, typename param>
+	container & Resolve( const param & );
 	
 	template <>
 	std::vector<T> & Resolve<std::vector<T>>( )
 	{
-		throw nullptr;
+		if( !ContractIsInitialized ) {
+			//	Cannot resolve when data has not been assigned
+			__debugbreak( );
+
+			/*
+			if( m_Contract != nullptr )
+			delete m_Contract;
+			m_Contract = nullptr;
+			//	Init new resolved contract
+			*/
+		}
 
 		return ResolvedContract->AsStandardVector;
 	}
 
 	template <>
-	concurrency::array_view<T, 1> & Resolve<concurrency::array_view<T, 1>>( )
+	concurrency::array_view<T, 1> & Resolve<concurrency::array_view<T, 1>>( const extent<1> & extent )
 	{
-		throw nullptr;
-
 		if( !ContractIsInitialized ) {
 			if( m_Contract != nullptr )
+			{
+				//	Not sure why this would happen
+				NOT_YET_IMPLEMENTED( );
 				delete m_Contract;
+			}
+
 			m_Contract = nullptr;
+			//	Init new resolved contract
+			m_Contract = new ResolvedDataBindingContract<T>( con )
 		}
 
 		return ResolvedContract->AsArrayView;
@@ -147,7 +186,6 @@ public:
 		if( m_Contract != nullptr ) {
 			delete m_Contract;
 			m_Contract = nullptr;
-
 		}
 
 		m_Contract = new ResolvedDataBindingContract<T>( data );
@@ -179,10 +217,15 @@ public:
 	T & Resolve( )
 	{
 		if( !ContractIsInitialized ) {
+			//	Cannot resolve when data has not been assigned
+			__debugbreak( );
+
+			/*
 			if( m_Contract != nullptr )
 				delete m_Contract;
 			m_Contract = nullptr;
 			m_Contract = new ResolvedDataBindingContract<T>( T( ) );
+			*/
 		}
 
 		return ResolvedContract->AsSingleValue;

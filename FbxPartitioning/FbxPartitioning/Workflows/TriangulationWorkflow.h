@@ -39,7 +39,7 @@ public:
 		//	Assumes the extent of dev_target was properly assigned to reflect the size of dev_indices
 		segmented_parallel_for_each(
 			mesh,
-			[=]( index<1> idx ) restrict( amp )
+			[verts, indices, mesh]( index<1> idx ) restrict( amp )
 		{
 			auto & tri = mesh[idx];
 
