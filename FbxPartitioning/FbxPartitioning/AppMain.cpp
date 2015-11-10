@@ -48,6 +48,87 @@ void process( const std::string & file )
 	auto start = clock( );
 
 	std::cout << "\n\n OPERATING ON " << file << std::endl;
+	
+	gpu_triangle_array * tris = nullptr, * volumeTris = nullptr;
+
+
+	//	Determine loading method
+	std::string fileExt = getFileExtension( file );
+	if( fileExt == "fbx" )
+	{
+		gpu_vertex_array * points;
+		gpu_index_array * indices;
+
+		workflow_import_fbx( file, &points, &indices );
+		workflow_gen_tris( points, indices, &tris );
+
+		delete points;
+		delete indices;
+	}
+	else if( fileExt == "msh" )
+	{
+		gpu_vertex_array * volumeData = nullptr;
+
+		gpu_vertex_array * points;
+		gpu_index_array * indices, * innerIndices;
+
+		workflow_import_msh( file, &points, &indices, &innerIndices );
+		workflow_gen_tris( points, indices, &tris );
+		workflow_gen_tris( points, innerIndices, &volumeTris );
+		
+		if( volumeData )
+			delete volumeData;
+		delete points;
+		delete indices, innerIndices;
+	}
+	else
+		NOT_YET_IMPLEMENTED( );
+
+
+
+	workflow_render_mesh( tris );
+	if( volumeTris )
+		workflow_render_mesh( volumeTris );
+
+
+	cpu_chunk_array * chunks;
+
+	{
+		float_3 min, max;
+		workflow_gather_mesh_bounds( tris, &min, &max );
+
+		gpu_index_array * tags;
+		gpu_index_array * partitionCounts;
+
+		gpu_partition_descriptor_array * partitions;
+		workflow_generate_partitions( tris, min, max, &partitions, &tags, &partitionCounts );
+		workflow_chunk_from_partitions( tris, partitions, tags, partitionCounts, &chunks );
+
+		delete partitions;
+	}
+
+	workflow_chunk_export_fbx( getFileName( file ), chunks );
+
+
+
+	delete tris;
+	if( volumeTris )
+		delete volumeTris;
+	delete chunks;
+
+	std::cout << "\nDONE" << std::endl;
+	std::cout << "Total operation took " << formatTime( clock( ) - start ) << std::endl;
+}
+
+
+
+
+
+/*void process( const std::string & file )
+{
+	auto start = clock( );
+
+	std::cout << "\n\n OPERATING ON " << file << std::endl;
 
 	DataBinding<float_3> points, volumeData;
 	DataBinding<int> indices, innerIndices;
@@ -59,7 +140,6 @@ void process( const std::string & file )
 
 	DataBinding<int> partitionMembershipCounts;
 	DataBinding<mesh_chunk> partitionedMesh;
-
 
 
 	auto ws = std::make_shared<Workspace>( );
@@ -88,7 +168,7 @@ void process( const std::string & file )
 
 	std::cout << "\nDONE" << std::endl;
 	std::cout << "Total operation took " << formatTime( clock( ) - start ) << std::endl;
-}
+}*/
 
 //#ifdef _DEBUG
 int main( )

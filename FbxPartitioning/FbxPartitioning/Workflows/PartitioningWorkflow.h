@@ -26,6 +26,198 @@ ONCE EFFECTIVE PARTITION LIST IS DISCOVERED
 
 #define MAX_CHUNK_TRIANGLES 0xFFFF
 
+//	Splits on 3D space
+cpu_partition_descriptor_array split_partition( mesh_partition_descriptor & partition, int num_splits )
+{
+	//	Todo - would be more effective if I sorted the partitions per axis and placed partitions based on percentiles
+
+	cpu_partition_descriptor_array result;
+	result.reserve( pow( num_splits + 1, 3 ) );
+
+	auto range_min = partition.bounds_start;
+	auto range_max = partition.bounds_end;
+
+	float x_base = range_min.x;
+	float y_base = range_min.y;
+	float z_base = range_min.z;
+
+
+	float x_step = (range_max.x - range_min.x) / num_splits;
+	float y_step = (range_max.y - range_min.y) / num_splits;
+	float z_step = (range_max.z - range_min.z) / num_splits;
+	for( int z = 0; z < num_splits + 1; z++ )
+	{
+		for( int y = 0; y < num_splits + 1; y++ )
+		{
+			for( int x = 0; x < num_splits + 1; x++ )
+			{
+				mesh_partition_descriptor desc;
+				desc.bounds_start.x = x_base + x * x_step;
+				desc.bounds_start.y = y_base + y * y_step;
+				desc.bounds_start.z = z_base + z * z_step;
+
+				desc.bounds_end.x = x_base + (x + 1) * x_step;
+				desc.bounds_end.y = y_base + (y + 1) * y_step;
+				desc.bounds_end.z = z_base + (z + 1) * z_step;
+
+				result.push_back( desc );
+			}
+		}
+	}
+
+	return result;
+}
+
+//	Tags all triangles in the mesh with their containing partition
+void gpu_tag_mesh_partitions( cpu_partition_descriptor_array & chunks, const gpu_triangle_array & mesh, gpu_index_array & out_tags )
+{
+	gpu_partition_descriptor_array dev_partitions( chunks );
+
+	int num_partitions = (int)chunks.size( );
+
+	segmented_parallel_for_each(
+		mesh,
+		[dev_partitions, mesh, out_tags, num_partitions]( index<1> idx ) restrict( amp )
+	{
+		float_3 tri_center = mesh[idx].center;
+
+		int owner_chunk = -1;
+
+		for( int i = 0; i < num_partitions; i++ )
+		{
+			mesh_partition_descriptor chunk = dev_partitions[i];
+			if( chunk.contains_point( tri_center ) )
+			{
+				owner_chunk = i;
+				break;
+			}
+		}
+
+		out_tags[idx] = owner_chunk;
+	} );
+
+	dev_partitions.synchronize( );
+}
+
+
+
+void workflow_generate_partitions( gpu_triangle_array * tris, float_3 bounds_min, float_3 bounds_max, gpu_partition_descriptor_array ** out_partitions, gpu_index_array ** out_tags, gpu_index_array ** out_partition_counts )
+{
+	auto & mesh = *tris;
+	cpu_triangle_array cpu_tris;
+	for( int i = 0; i < mesh.extent.size( ); i++ )
+		cpu_tris.push_back( mesh[i] );
+
+	//	Options
+	int axisSplits = 2; // when we split a partition, how many times should we split it? (on X, Y, Z axis)
+
+	mesh_partition_descriptor basePartition = {
+		bounds_min,
+		bounds_max
+	};
+
+	//	Record of our "current" partitioning attempt
+	cpu_partition_descriptor_array partitions = split_partition( basePartition, axisSplits );
+	std::vector<int> partitionSizes;
+
+	for( ;; )
+	{
+		std::cout << "Attempting mesh partitioning using " << partitions.size( ) << " partitions" << std::endl;
+
+		std::cout << "\t(GPU partition tagging... ";
+		gpu_index_array dev_meshtags( mesh.extent );
+		dev_meshtags.discard_data( );
+
+		gpu_tag_mesh_partitions( partitions, mesh, dev_meshtags );
+		//cpu::tag_mesh_partitions( partitions, cpu_tris, meshtags );
+
+		dev_meshtags.synchronize( );
+
+		partitionSizes.clear( );
+		partitionSizes.assign( partitions.size( ), 0 );
+
+		std::cout << "done)" << std::endl;
+
+
+		std::cout << "\t(CPU counting partition membership... ";
+		for( int i = 0; i < cpu_tris.size( ); i++ )
+		{
+			int partitionIndex = dev_meshtags[i];
+#ifdef _DEBUG
+			triangle tri = cpu_tris[i];
+			if( partitionIndex < 0 )
+				__debugbreak( );
+#endif
+			++partitionSizes[partitionIndex];
+		}
+
+		//	Check if the current partitioning scheme is valid (satisfies max chunk size)
+
+		cpu_partition_descriptor_array newPartitions;
+
+		std::cout << "done)" << std::endl;
+
+
+		//	If there are any partitions that were larger than MAX_CHUNK_TRIANGLES, split those into smaller partitions and try again
+
+		std::cout << "\t(CPU discovering new partitions... ";
+		bool schemeWasValid = true;
+		int largestViolation = 0;
+		int numRemovedPartitions = 0;
+		for( int i = 0; i < partitions.size( ); i++ )
+		{
+			int violation = fmax( 0, partitionSizes[i] - MAX_CHUNK_TRIANGLES );
+			largestViolation = fmax( largestViolation, violation );
+
+			if( violation > 0 )
+			{
+				//	Break partition
+				auto missingPartitions = split_partition( partitions[i], axisSplits );
+				for( auto p : missingPartitions )
+					newPartitions.emplace_back( p );
+
+				partitions.erase( partitions.begin( ) + i );
+				partitionSizes.erase( partitionSizes.begin( ) + i );
+
+				--i;
+
+				schemeWasValid = false;
+			}
+			else if( partitionSizes[i] == 0 )
+			{
+				//	Remove partitions that aren't useful
+				partitions.erase( partitions.begin( ) + i );
+				partitionSizes.erase( partitionSizes.begin( ) + i );
+				--i;
+				numRemovedPartitions++;
+			}
+		}
+
+		std::cout << "done)" << std::endl;
+
+		std::cout << "Discovered " << newPartitions.size( ) << " new partitions, removed " << numRemovedPartitions << " unused partitions, largest violation was " << largestViolation << " tris" << std::endl;
+
+		for( auto newPartition : newPartitions )
+			partitions.emplace_back( newPartition );
+
+		if( schemeWasValid )
+		{
+			*out_tags = new gpu_index_array( dev_meshtags );
+			*out_partitions = new gpu_partition_descriptor_array( partitions );
+			*out_partition_counts = new gpu_index_array( partitionSizes );
+			break;
+		}
+
+		std::cout << std::endl;
+	}
+}
+
+
+
+
+
+
+
 
 class PartitioningWorkflow : public Workflow
 {

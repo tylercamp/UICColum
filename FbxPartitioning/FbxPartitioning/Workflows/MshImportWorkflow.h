@@ -7,6 +7,53 @@
 #include "../Workflow.h"
 #include "../Types.h"
 
+void workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_points, gpu_index_array ** out_indices, gpu_index_array ** out_inner_indices )
+{
+	cpu_vertex_array cpu_vertices;
+	cpu_index_array cpu_indices;
+
+	MshReader * reader = new MshReader( fileName );
+	//	Generally no more than one set of point data
+	if( reader->PointData.size( ) > 1 )
+		__debugbreak( );
+
+	auto & pointData = reader->PointData[0];
+	for( std::size_t i = 0; i < pointData.count; i++ )
+	{
+		auto & currentPoint = pointData.data[i];
+		cpu_vertices.push_back( float_3( currentPoint.data[0], currentPoint.data[1], currentPoint.data[2] ) );
+	}
+
+	for( std::size_t i = 0; i < reader->FaceData.size( ); i++ )
+	{
+		auto & faceData = reader->FaceData[i];
+		//	Ignore inner faces
+		if( faceData.data[0].is_inner )
+			continue;
+
+		for( std::size_t j = 0; j < faceData.data.size( ); j++ )
+		{
+			auto & face = faceData.data[j];
+
+			cpu_indices.push_back( face.point_indices[0] );
+			cpu_indices.push_back( face.point_indices[1] );
+			cpu_indices.push_back( face.point_indices[2] );
+
+			cpu_indices.push_back( face.point_indices[0] );
+			cpu_indices.push_back( face.point_indices[3] );
+			cpu_indices.push_back( face.point_indices[2] );
+		}
+	}
+
+	*out_points = new gpu_vertex_array( cpu_vertices );
+	*out_indices = new gpu_index_array( cpu_indices );
+}
+
+
+
+
+
+
 class MshImportWorkflow : public Workflow
 {
 	std::string m_TargetFileName;

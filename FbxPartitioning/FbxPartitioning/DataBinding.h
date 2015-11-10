@@ -37,15 +37,22 @@ public:
 		return *m_ResolvedContract;
 	}
 
+	void Fulfill( ResolvedDataBinding<T> * resolvedBinding )
+	{
+		if( m_ResolvedContract != nullptr )
+			Nullify( );
+
+		m_ResolvedContract = resolvedBinding;
+	}
+
 	void Nullify( )
 	{
 		if( m_ResolvedContract == nullptr )
 			return;
 
-		NOT_YET_IMPLEMENTED( );
+		delete m_ResolvedContract;
+		m_ResolvedContract = nullptr;
 	}
-
-	virtual ~DataBindingContract( ) { }
 };
 
 template <typename T>
@@ -102,11 +109,10 @@ public:
 		m_Storage = nullptr;
 	}
 
-	vget( bool, IsResolved ) override { return true; }
 
 
 
-	vget( std::vector<T> &, AsStandardVector )
+	get( std::vector<T> &, AsStandardVector )
 	{
 		if( CurrentStorageType != StandardVector )
 			__debugbreak( );
@@ -114,7 +120,7 @@ public:
 		return *(m_Storage->asVector);
 	}
 
-	vget( concurrency::array_view<T> &, AsArrayView )
+	get( concurrency::array_view<T> &, AsArrayView )
 	{
 		if( CurrentStorageType != ConcurrencyArrayView )
 			__debugbreak( );
@@ -122,7 +128,7 @@ public:
 		return *(m_Storage->asArrayView);
 	}
 
-	vget( T &, AsSingleValue )
+	get( T &, AsSingleValue )
 	{
 		if( CurrentStorageType != SingleValue )
 			__debugbreak( );
@@ -238,22 +244,18 @@ public:
 
 	void Assign( std::vector<T> & data )
 	{
-		if( m_Contract != nullptr ) {
-			delete m_Contract;
-			m_Contract = nullptr;
-		}
+		if( m_Contract->IsResolved )
+			m_Contract->Nullify( );
 
-		m_Contract = new ResolvedDataBindingContract<T>( data );
+		m_Contract->Fulfill( new ResolvedDataBinding<T>( data ) );
 	}
 
 	void Assign( concurrency::array_view<T> & data )
 	{
-		if( m_Contract != nullptr ) {
-			delete m_Contract;
-			m_Contract = nullptr;
-		}
+		if( m_Contract->IsResolved )
+			m_Contract->Nullify( );
 
-		m_Contract = new ResolvedDataBindingContract<T>( data );
+		m_Contract->Fulfill( new ResolvedDataBinding<T>( data ) );
 	}
 
 protected:
@@ -267,7 +269,7 @@ protected:
 private:
 
 	get( bool, ContractIsInitialized ) { return m_Contract == nullptr ? false : m_Contract->IsResolved; }
-	get( ResolvedDataBinding<T> &, ResolvedContract ) { return ContractIsInitialized ? m_Contract->ResolvedBinding : nullptr; }
+	get( ResolvedDataBinding<T> &, ResolvedContract ) { return m_Contract->ResolvedBinding; }
 };
 
 
@@ -283,7 +285,7 @@ public:
 	{
 		if( !ContractIsInitialized ) {
 			//	Cannot resolve when data has not been assigned
-			__debugbreak( );
+			NOT_YET_IMPLEMENTED( );
 
 			/*
 			if( m_Contract != nullptr )
@@ -299,18 +301,7 @@ public:
 
 	void Assign( const T & value )
 	{
-		if( ContractIsInitialized )
-		{
-			if( m_Contract != nullptr ) {
-				delete m_Contract;
-				m_Contract = nullptr;
-			}
-
-			m_Contract = new ResolvedDataBindingContract<T>( T( ) );
-		}
-
-		auto & valueStorage = ResolvedContract.AsSingleValue;
-		valueStorage = value;
+		NOT_YET_IMPLEMENTED( );
 	}
 
 protected:
@@ -324,7 +315,7 @@ protected:
 private:
 
 	get( bool, ContractIsInitialized ) { return m_Contract == nullptr ? false : m_Contract->IsResolved; }
-	get( ResolvedDataBinding<T> &, ResolvedContract ) { return ContractIsInitialized ? m_Contract-ResolvedBinding : nullptr; }
+	get( ResolvedDataBinding<T> &, ResolvedContract ) { return m_Contract->ResolvedBinding; }
 };
 
 
