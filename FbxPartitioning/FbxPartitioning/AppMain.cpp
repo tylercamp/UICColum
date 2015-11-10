@@ -41,7 +41,23 @@
 
 
 
-//	MAIN PROCESSING FUNCTION
+//	MAIN PROCESSING FUNCTIONS
+
+void generate_chunks( gpu_triangle_array * tris, cpu_chunk_array ** out_chunks )
+{
+	float_3 min, max;
+	workflow_gather_mesh_bounds( tris, &min, &max );
+
+	gpu_index_array * tags;
+	gpu_index_array * partitionCounts;
+
+	gpu_partition_descriptor_array * partitions;
+	workflow_generate_partitions( tris, min, max, &partitions, &tags, &partitionCounts );
+	workflow_chunk_from_partitions( tris, partitions, tags, partitionCounts, out_chunks );
+
+	delete partitions;
+	delete tags, partitionCounts;
+}
 
 void process( const std::string & file )
 {
@@ -73,6 +89,8 @@ void process( const std::string & file )
 		gpu_index_array * indices, * innerIndices;
 
 		workflow_import_msh( file, &points, &indices, &innerIndices );
+		int x = indices->data()[0];
+		int y = innerIndices->data( )[0];
 		workflow_gen_tris( points, indices, &tris );
 		workflow_gen_tris( points, innerIndices, &volumeTris );
 		
@@ -91,23 +109,15 @@ void process( const std::string & file )
 		workflow_render_mesh( volumeTris );
 
 
-	cpu_chunk_array * chunks;
+	cpu_chunk_array * chunks, * volumeChunks = nullptr;
+	generate_chunks( tris, &chunks );
+	if( volumeTris )
+		generate_chunks( volumeTris, &volumeChunks );
 
-	{
-		float_3 min, max;
-		workflow_gather_mesh_bounds( tris, &min, &max );
-
-		gpu_index_array * tags;
-		gpu_index_array * partitionCounts;
-
-		gpu_partition_descriptor_array * partitions;
-		workflow_generate_partitions( tris, min, max, &partitions, &tags, &partitionCounts );
-		workflow_chunk_from_partitions( tris, partitions, tags, partitionCounts, &chunks );
-
-		delete partitions;
-	}
-
-	workflow_chunk_export_fbx( getFileName( file ), chunks );
+	CreateDirectoryA( getFileName( file ).c_str( ), nullptr );
+	workflow_chunk_export_fbx( getFileName( file ) + "/surfaces", chunks );
+	if( volumeChunks )
+		workflow_chunk_export_fbx( getFileName( file ) + "/volumes", volumeChunks );
 
 
 
@@ -115,6 +125,8 @@ void process( const std::string & file )
 	if( volumeTris )
 		delete volumeTris;
 	delete chunks;
+	if( volumeChunks )
+		delete volumeChunks;
 
 	std::cout << "\nDONE" << std::endl;
 	std::cout << "Total operation took " << formatTime( clock( ) - start ) << std::endl;

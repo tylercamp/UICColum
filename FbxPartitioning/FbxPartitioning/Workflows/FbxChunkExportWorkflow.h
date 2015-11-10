@@ -3,6 +3,7 @@
 #include <FbxSdk.h>
 #include <fstream>
 #include <iostream>
+#include <Shlobj.h>
 
 #include "../Workflow.h"
 #include "../Types.h"
@@ -53,7 +54,7 @@ void save_chunkset_metadata( std::string filename, cpu_chunk_array * chunkset )
 	std::ofstream file( filename );
 
 	//file << "FbxPartitioning"
-	NOT_YET_IMPLEMENTED( );
+	//NOT_YET_IMPLEMENTED( );
 
 	file.close( );
 }
@@ -61,17 +62,19 @@ void save_chunkset_metadata( std::string filename, cpu_chunk_array * chunkset )
 void workflow_chunk_export_fbx( const std::string & targetFolder, cpu_chunk_array * chunks )
 {
 	std::cout << "Saving chunks... ";
-	CreateDirectoryA( (targetFolder + "_chunks/").c_str( ), nullptr );
+	CreateDirectoryA( targetFolder.c_str( ), nullptr );
+	//	http://stackoverflow.com/questions/1530760/how-do-i-recursively-create-a-folder-in-win32
+	//system( ("mkdir " + targetFolder).c_str( ) );
+	//SHCreateDirectoryExA( NULL, targetFolder.c_str( ), NULL );
 	for( int i = 0; i < chunks->size( ); i++ )
 	{
 		std::ostringstream pathName;
-		pathName << targetFolder << "_chunks/";
-		pathName << targetFolder << "_" << i << ".fbx";
+		pathName << targetFolder << "/" << i << ".fbx";
 		auto & chunk = chunks->at( i );
 		save_chunk( pathName.str( ), chunk );
 	}
 
-	save_chunkset_metadata( targetFolder + "_chunks/meta", chunks );
+	save_chunkset_metadata( targetFolder, chunks );
 }
 
 

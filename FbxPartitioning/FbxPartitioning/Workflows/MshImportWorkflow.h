@@ -11,6 +11,7 @@ void workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_
 {
 	cpu_vertex_array cpu_vertices;
 	cpu_index_array cpu_indices;
+	cpu_index_array cpu_inner_indices;
 
 	MshReader * reader = new MshReader( fileName );
 	//	Generally no more than one set of point data
@@ -27,26 +28,32 @@ void workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_
 	for( std::size_t i = 0; i < reader->FaceData.size( ); i++ )
 	{
 		auto & faceData = reader->FaceData[i];
+
+		cpu_index_array * target_indices;
+
 		//	Ignore inner faces
 		if( faceData.data[0].is_inner )
-			continue;
+			target_indices = &cpu_inner_indices;
+		else
+			target_indices = &cpu_indices;
 
 		for( std::size_t j = 0; j < faceData.data.size( ); j++ )
 		{
 			auto & face = faceData.data[j];
 
-			cpu_indices.push_back( face.point_indices[0] );
-			cpu_indices.push_back( face.point_indices[1] );
-			cpu_indices.push_back( face.point_indices[2] );
+			target_indices->push_back( face.point_indices[0] );
+			target_indices->push_back( face.point_indices[1] );
+			target_indices->push_back( face.point_indices[2] );
 
-			cpu_indices.push_back( face.point_indices[0] );
-			cpu_indices.push_back( face.point_indices[3] );
-			cpu_indices.push_back( face.point_indices[2] );
+			target_indices->push_back( face.point_indices[0] );
+			target_indices->push_back( face.point_indices[2] );
+			target_indices->push_back( face.point_indices[3] );
 		}
 	}
 
-	*out_points = new gpu_vertex_array( cpu_vertices );
-	*out_indices = new gpu_index_array( cpu_indices );
+	*out_points = bindless_copy( cpu_vertices );
+	*out_indices = bindless_copy( cpu_indices );
+	*out_inner_indices = bindless_copy( cpu_inner_indices );
 }
 
 

@@ -8,7 +8,11 @@ void workflow_gen_tris( gpu_vertex_array * points, gpu_index_array * indices, gp
 	auto & verts = *points;
 	auto & local_indices = *indices;
 
-	auto & tris = *(*out_tris = new gpu_triangle_array( indices->extent.size( ) / 3 ));
+
+
+	*out_tris = new gpu_triangle_array( indices->extent.size( ) / 3 );
+	auto & tris = **out_tris;
+	tris.discard_data( );
 
 	//	Assumes the extent of dev_target was properly assigned to reflect the size of dev_indices
 	segmented_parallel_for_each(

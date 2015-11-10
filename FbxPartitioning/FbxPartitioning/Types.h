@@ -112,3 +112,31 @@ void segmented_parallel_for_each( array_view<T> data, Func func )
 		} );
 	}
 }
+
+template <typename T>
+concurrency::array_view<T> * bindless_copy( const std::vector<T> source )
+{
+	auto result = new concurrency::array_view<T>( (int)source.size( ) );
+	result->discard_data( );
+
+	for( std::size_t i = 0; i < source.size( ); i++ )
+	{
+		(*result)[i] = source[i];
+	}
+
+	return result;
+}
+
+template <typename T>
+concurrency::array_view<T> * bindless_copy( const concurrency::array_view<T> & source )
+{
+	auto result = new concurrency::array_view<T>( source.extent );
+	result->discard_data( );
+
+	for( std::size_t i = 0; i < source.extent.size( ); i++ )
+	{
+		(*result)[i] = source[i];
+	}
+
+	return result;
+}

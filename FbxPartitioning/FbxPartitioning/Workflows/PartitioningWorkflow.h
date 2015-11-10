@@ -202,9 +202,9 @@ void workflow_generate_partitions( gpu_triangle_array * tris, float_3 bounds_min
 
 		if( schemeWasValid )
 		{
-			*out_tags = new gpu_index_array( dev_meshtags );
-			*out_partitions = new gpu_partition_descriptor_array( partitions );
-			*out_partition_counts = new gpu_index_array( partitionSizes );
+			*out_tags = bindless_copy( dev_meshtags );
+			*out_partitions = bindless_copy( partitions );
+			*out_partition_counts = bindless_copy( partitionSizes );
 			break;
 		}
 
