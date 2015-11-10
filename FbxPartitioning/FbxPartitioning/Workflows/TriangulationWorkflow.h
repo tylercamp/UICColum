@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../Workflow.h"
 #include "../Types.h"
 
 void workflow_gen_tris( gpu_vertex_array * points, gpu_index_array * indices, gpu_triangle_array ** out_tris )

@@ -3,7 +3,7 @@
 #include "../Types.h"
 #include "../Utilities.h"
 
-void mesh_gen_normals( gpu_triangle_array * tris )
+void workflow_gen_normals( gpu_triangle_array * tris )
 {
 	using namespace concurrency::fast_math;
 

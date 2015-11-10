@@ -166,9 +166,7 @@
   <ItemGroup>
     <ClInclude Include="MshReader.h" />
     <ClInclude Include="Utilities.h" />
-    <ClInclude Include="Workflow.h" />
     <ClInclude Include="Types.h" />
-    <ClInclude Include="DataBinding.h" />
     <ClInclude Include="Workflows\MeshChunkingWorkflow.h" />
     <ClInclude Include="Workflows\FbxImportWorkflow.h" />
     <ClInclude Include="Workflows\FbxChunkExportWorkflow.h" />
@@ -178,7 +176,6 @@
     <ClInclude Include="Workflows\PartitioningWorkflow.h" />
     <ClInclude Include="Workflows\RenderWorkflow.h" />
     <ClInclude Include="Workflows\TriangulationWorkflow.h" />
-    <ClInclude Include="WorkflowScheduler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

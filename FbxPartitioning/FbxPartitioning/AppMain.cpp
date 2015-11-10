@@ -5,7 +5,6 @@
 
 #include "Types.h"
 #include "Utilities.h"
-#include "WorkflowScheduler.h"
 
 #include "Workflows/FbxChunkExportWorkflow.h"
 #include "Workflows/FbxImportWorkflow.h"
@@ -78,6 +77,7 @@ void process( const std::string & file )
 
 		workflow_import_fbx( file, &points, &indices );
 		workflow_gen_tris( points, indices, &tris );
+		workflow_gen_normals( tris );
 
 		delete points;
 		delete indices;
@@ -94,6 +94,8 @@ void process( const std::string & file )
 		int y = innerIndices->data( )[0];
 		workflow_gen_tris( points, indices, &tris );
 		workflow_gen_tris( points, innerIndices, &volumeTris );
+		workflow_gen_normals( tris );
+		workflow_gen_normals( volumeTris );
 		
 		if( volumeData )
 			delete volumeData;
