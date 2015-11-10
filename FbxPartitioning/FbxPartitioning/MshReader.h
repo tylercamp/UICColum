@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ctime>
 #include <string>
 #include <fstream>
 #include <vector>
@@ -67,7 +66,7 @@ class MshReader
 		auto start = clock( );
 
 		std::vector<std::string> result;
-		result.reserve( length / 10 ); // heuristic
+		result.reserve( length / 3 ); // heuristic
 
 		int startIndex = 0;
 		for( std::size_t i = 0; i < length; i++ )
@@ -82,6 +81,7 @@ class MshReader
 		}
 
 		auto time = clock( ) - start;
+		result.reserve( result.size( ) );
 		return result;
 	}
 
@@ -218,8 +218,8 @@ public:
 						startIndex = i;
 					}
 				}
-				
-				face.is_inner = (face.point_indices[numData - 2] == 0);
+
+				face.is_inner = (face.point_indices[numData - 2] != 0);
 				FaceData.back( ).data.emplace_back( face );
 
 				break;
@@ -233,7 +233,7 @@ public:
 				if( lineText[lineText.size( ) - 1] != '(' )
 					continue;
 
-				int listType = ParseInt( lineText.substr( 1, lineText.find( ' ' ) - 1 ) );
+				int listType = ParseInt( lineText.substr( 1, lineText.find( ' ' ) ) );
 				switch( listType )
 				{
 				case(10) :
