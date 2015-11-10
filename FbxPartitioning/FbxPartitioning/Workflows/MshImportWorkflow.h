@@ -41,13 +41,13 @@ void workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_
 		{
 			auto & face = faceData.data[j];
 
-			target_indices->push_back( face.point_indices[0] );
-			target_indices->push_back( face.point_indices[1] );
-			target_indices->push_back( face.point_indices[2] );
+			target_indices->push_back( face.point_indices[0] - 1 );
+			target_indices->push_back( face.point_indices[1] - 1 );
+			target_indices->push_back( face.point_indices[2] - 1 );
 
-			target_indices->push_back( face.point_indices[0] );
-			target_indices->push_back( face.point_indices[2] );
-			target_indices->push_back( face.point_indices[3] );
+			target_indices->push_back( face.point_indices[0] - 1 );
+			target_indices->push_back( face.point_indices[2] - 1 );
+			target_indices->push_back( face.point_indices[3] - 1 );
 		}
 	}
 

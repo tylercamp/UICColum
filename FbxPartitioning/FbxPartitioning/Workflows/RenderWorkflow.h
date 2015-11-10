@@ -10,6 +10,86 @@
 
 #define PREVIEW_MESH_HIDPI
 
+
+
+//	Code to avoid immediate-mode, TODO: Integratea
+/*
+
+GLuint vertArrayId;
+
+bool didInit = false;
+bool didLoadData = false;
+const int maxBufferCount = 0xFFFF / (sizeof(triangle)/8);
+std::vector<GLuint> vertBuffers;
+void initDraw( int numTris )
+{
+	glewInit( );
+
+	glGenVertexArrays( 1, &vertArrayId );
+	glBindVertexArray( vertArrayId );
+
+	int numBuffers = ceil( static_cast<float>(numTris) / maxBufferCount );
+	vertBuffers.resize( numBuffers );
+	glGenBuffers( numBuffers, vertBuffers.data( ) );
+
+	didInit = true;
+}
+
+void draw_mesh( const cpu_triangle_array & tris )
+{
+	if( !didInit )
+		initDraw( tris.size( ) );
+
+	if( !didLoadData )
+	{
+		for( int b = 0; b < vertBuffers.size( ); b++ )
+		{
+			int buffer = vertBuffers[b];
+
+			int offset = b * maxBufferCount;
+			int count = min( maxBufferCount, tris.size( ) - offset );
+
+			auto data = tris.data( ) + offset;
+
+			glBindBuffer( GL_ARRAY_BUFFER, buffer );
+			glBufferData( GL_ARRAY_BUFFER, count * sizeof( triangle ), data, GL_STATIC_DRAW );
+			glFlush( );
+		}
+
+		didLoadData = true;
+	}
+
+	glEnableVertexAttribArray( 0 );
+	for( int i = 0; i < vertBuffers.size( ); i++ )
+	{
+		int count = min( maxBufferCount, tris.size( ) - i * maxBufferCount );
+
+		glBindBuffer( GL_ARRAY_BUFFER, vertBuffers[i] );
+		glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, nullptr );
+		glDrawArrays( GL_TRIANGLES, 0, 3 * count );
+	}
+	glDisableVertexAttribArray( 0 );
+}
+
+void draw_mesh_safe( const cpu_triangle_array & tris )
+{
+	glBegin( GL_TRIANGLES );
+	for( int i = 0; i < tris.size( ); i++ )
+	{
+		glVertex3f( tris[i].a.x, tris[i].a.y, tris[i].a.z );
+		glVertex3f( tris[i].b.x, tris[i].b.y, tris[i].b.z );
+		glVertex3f( tris[i].c.x, tris[i].c.y, tris[i].c.z );
+	}
+	glEnd( );
+}
+
+*/
+
+
+
+
+
+
 /* Windowing functions */
 //	Window/rendering only for debugging, final application should just be a processing tool.
 
@@ -56,8 +136,8 @@ void run_window( const cpu_triangle_array & tris )
 
 		//draw_partitions( partitions );
 
-		//glBegin( GL_TRIANGLES );
-		glBegin( GL_POINTS );
+		glBegin( GL_TRIANGLES );
+		//glBegin( GL_POINTS );
 		glColor3f( 1.0f, 1.0f, 1.0f );
 		for( const auto & tri : tris )
 		{

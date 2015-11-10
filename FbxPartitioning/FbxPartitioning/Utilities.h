@@ -126,3 +126,12 @@ void pause( )
 	std::string str;
 	std::getline( std::cin, str );
 }
+
+float_3 cross( float_3 a, float_3 b ) restrict( amp )
+{
+	return float_3(
+		a.y * b.z - a.z * b.y,
+		a.z * b.x - a.x * b.z,
+		a.x * b.y - a.y * b.x
+		);
+}

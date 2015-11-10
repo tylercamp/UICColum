@@ -29,12 +29,15 @@ using concurrency::graphics::float_3;
 	__declspec(property(get = get_##name)) type name;	\
 	virtual inline type get_##name( ) const
 
+
+
 struct triangle
 {
 	float_3 a, b, c;
+	float_3 norm_a, norm_b, norm_c;
 
-	//	float_3 center;
-	get( float_3, center ) restrict( amp, cpu )
+	__declspec( property( get = get_center ) ) float_3 center;
+	float_3 get_center( ) const restrict( amp, cpu )
 	{
 		return ( a + b + c ) * 0.33333f;
 	}
@@ -66,6 +69,7 @@ struct mesh_chunk
 //	Describe CPU v GPU types
 typedef concurrency::array_view<triangle> gpu_triangle_array;
 typedef concurrency::array_view<float_3> gpu_vertex_array;
+typedef concurrency::array_view<float_3> gpu_normal_array;
 typedef concurrency::array_view<int> gpu_index_array;
 
 typedef concurrency::array_view<mesh_partition_descriptor> gpu_partition_descriptor_array;

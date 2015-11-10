@@ -26,6 +26,7 @@ void save_chunk( std::string filename, const mesh_chunk & chunk )
 	scene->GetRootNode( )->AddChild( meshNode );
 
 	outputMesh->InitControlPoints( chunk.num_tris * 3 );
+	outputMesh->InitNormals( chunk.num_tris * 3 );
 	auto * controlPoints = outputMesh->GetControlPoints( );
 
 	for( int i = 0; i < chunk.num_tris; i++ )
@@ -36,12 +37,18 @@ void save_chunk( std::string filename, const mesh_chunk & chunk )
 		controlPoints[i * 3 + 1].Set( tri.b.x, tri.b.y, tri.b.z );
 		controlPoints[i * 3 + 2].Set( tri.c.x, tri.c.y, tri.c.z );
 
+		outputMesh->SetControlPointNormalAt( FbxVector4( tri.norm_a.x, tri.norm_a.y, tri.norm_a.z, 0.0f ), i * 3 + 0 );
+		outputMesh->SetControlPointNormalAt( FbxVector4( tri.norm_b.x, tri.norm_b.y, tri.norm_b.z, 0.0f ), i * 3 + 1 );
+		outputMesh->SetControlPointNormalAt( FbxVector4( tri.norm_c.x, tri.norm_c.y, tri.norm_c.z, 0.0f ), i * 3 + 2 );
+
 		outputMesh->BeginPolygon( );
 		outputMesh->AddPolygon( i * 3 + 0 );
 		outputMesh->AddPolygon( i * 3 + 1 );
 		outputMesh->AddPolygon( i * 3 + 2 );
 		outputMesh->EndPolygon( );
 	}
+
+	//outputMesh->GenerateNormals( );
 
 	exporter->Export( scene );
 

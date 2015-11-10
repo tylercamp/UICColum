@@ -15,6 +15,7 @@
 #include "Workflows/RenderWorkflow.h"
 #include "Workflows/MeshChunkingWorkflow.h"
 #include "Workflows/GatherMeshBoundsWorkflow.h"
+#include "Workflows/NormalGenerationWorkflow.h"
 
 #ifdef main
 # undef main
@@ -133,54 +134,6 @@ void process( const std::string & file )
 }
 
 
-
-
-
-/*void process( const std::string & file )
-{
-	auto start = clock( );
-
-	std::cout << "\n\n OPERATING ON " << file << std::endl;
-
-	DataBinding<float_3> points, volumeData;
-	DataBinding<int> indices, innerIndices;
-	DataBinding<triangle> mesh;
-	DatumBinding<float_3> meshExtentsMin, meshExtentsMax;
-
-	DataBinding<int> meshTags;
-	DataBinding<mesh_partition_descriptor> meshPartitions;
-
-	DataBinding<int> partitionMembershipCounts;
-	DataBinding<mesh_chunk> partitionedMesh;
-
-
-	auto ws = std::make_shared<Workspace>( );
-	ws->AddData( points, indices, mesh, meshTags, partitionedMesh );
-
-	WorkflowScheduler sched;
-	sched.SetWorkspace( ws );
-
-	//	Determine loading method
-	std::string fileExt = getFileExtension( file );
-	if( fileExt == "fbx" )
-		sched.AddWorkflow( new FbxImportWorkflow( file, &points, &indices ) );
-	else if( fileExt == "msh" )
-		sched.AddWorkflow( new MshImportWorkflow( file, &points, &indices, &innerIndices ) );
-	else
-		__debugbreak( );
-
-	sched.AddWorkflow( new TriangulationWorkflow( points, indices, &mesh ) );
-	//sched.AddWorkflow( new RenderWorkflow( mesh ) );
-	sched.AddWorkflow( new GatherMeshBoundsWorkflow( mesh, &meshExtentsMin, &meshExtentsMax ) );
-	sched.AddWorkflow( new PartitioningWorkflow( mesh, meshExtentsMin, meshExtentsMax, &meshTags, &meshPartitions, &partitionMembershipCounts ) );
-	sched.AddWorkflow( new MeshChunkingWorkflow( mesh, meshTags, partitionMembershipCounts, meshPartitions, &partitionedMesh ) );
-	sched.AddWorkflow( new FbxChunkExportWorkflow( getFileName( file ), partitionedMesh ) );
-
-	sched.Run( );
-
-	std::cout << "\nDONE" << std::endl;
-	std::cout << "Total operation took " << formatTime( clock( ) - start ) << std::endl;
-}*/
 
 //#ifdef _DEBUG
 int main( )
