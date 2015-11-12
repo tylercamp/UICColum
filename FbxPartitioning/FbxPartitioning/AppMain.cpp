@@ -108,20 +108,16 @@ void process( const std::string & file )
 
 
 	workflow_render_mesh( tris );
-	if( volumeTris )
-		workflow_render_mesh( volumeTris );
+	if( volumeTris ) workflow_render_mesh( volumeTris );
 
 
 	cpu_chunk_array * chunks, * volumeChunks = nullptr;
 	generate_chunks( tris, &chunks );
-	if( volumeTris )
-		generate_chunks( volumeTris, &volumeChunks );
+	if( volumeTris ) generate_chunks( volumeTris, &volumeChunks );
 
 	CreateDirectoryA( getFileName( file ).c_str( ), nullptr );
 	workflow_chunk_export_fbx( getFileName( file ) + "/surfaces", chunks );
-	if( volumeChunks )
-		workflow_chunk_export_fbx( getFileName( file ) + "/volumes", volumeChunks );
-
+	if( volumeChunks ) workflow_chunk_export_fbx( getFileName( file ) + "/volumes", volumeChunks );
 
 
 	delete tris;

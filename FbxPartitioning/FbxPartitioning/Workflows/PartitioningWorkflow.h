@@ -23,7 +23,7 @@ ONCE EFFECTIVE PARTITION LIST IS DISCOVERED
 2. Copy back to CPU, copy into partition buffers, write to disk
 */
 
-#define MAX_CHUNK_TRIANGLES 0xFFFF
+#define MAX_CHUNK_TRIANGLES (0xFFFF/3)
 
 //	Splits on 3D space
 cpu_partition_descriptor_array split_partition( mesh_partition_descriptor & partition, int num_splits )
