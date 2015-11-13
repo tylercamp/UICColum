@@ -6,7 +6,7 @@
 #pragma comment( lib, "libfbxsdk.lib" )
 
 
-
+//	http://ericeastwood.com/blog/17/unity-and-dlls-c-managed-and-c-unmanaged
 
 
 
@@ -29,6 +29,17 @@ FbxMesh * SearchNode( FbxNode* pNode )
 
 
 
+
+
+UNITY_NATIVE_EXPORT float * MeshGetVertices( ParsedMeshStructure * mesh )
+{
+	return mesh->vertexData;
+}
+
+UNITY_NATIVE_EXPORT float * MeshGetNormals( ParsedMeshStructure * mesh )
+{
+	return mesh->normalData;
+}
 
 
 UNITY_NATIVE_EXPORT ParsedMeshStructure * LoadFbxMesh( const char * targetPath )
@@ -86,9 +97,16 @@ UNITY_NATIVE_EXPORT ParsedMeshStructure * LoadFbxMesh( const char * targetPath )
 	return parsedMesh;
 }
 
+
+
+
+#ifdef _DEBUG
+
 int main( )
 {
 	LoadFbxMesh( "0.fbx" );
 
 	return 0;
 }
+
+#endif
