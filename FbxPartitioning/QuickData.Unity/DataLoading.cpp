@@ -31,14 +31,21 @@ FbxMesh * SearchNode( FbxNode* pNode )
 
 
 
-UNITY_NATIVE_EXPORT float * MeshGetVertices( ParsedMeshStructure * mesh )
+UNITY_NATIVE_EXPORT int MeshTrisCount( ParsedMeshStructure * mesh )
 {
-	return mesh->vertexData;
+	return mesh->numTris;
 }
 
-UNITY_NATIVE_EXPORT float * MeshGetNormals( ParsedMeshStructure * mesh )
+UNITY_NATIVE_EXPORT void MeshGetVertices( ParsedMeshStructure * mesh, float * targetBuffer, int bufferSize )
 {
-	return mesh->normalData;
+	for( int i = 0; i < bufferSize && i < mesh->numTris * 3; i++ )
+		targetBuffer[i] = mesh->vertexData[i];
+}
+
+UNITY_NATIVE_EXPORT void MeshGetNormals( ParsedMeshStructure * mesh, float * targetBuffer, int bufferSize )
+{
+	for( int i = 0; i < bufferSize && i < mesh->numTris * 3; i++ )
+		targetBuffer[i] = mesh->normalData[i];
 }
 
 

@@ -9,4 +9,9 @@ struct ParsedMeshStructure
 	float * colorData;
 
 	int numTris;
+
+	ParsedMeshStructure( ) : vertexData( nullptr ), normalData( nullptr ), colorData( nullptr ), numTris( 0 )
+	{
+
+	}
 };
