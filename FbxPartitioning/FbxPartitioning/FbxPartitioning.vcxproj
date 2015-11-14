@@ -171,6 +171,7 @@
     <ClInclude Include="Workflows\FbxImportWorkflow.h" />
     <ClInclude Include="Workflows\FbxChunkExportWorkflow.h" />
     <ClInclude Include="Workflows\GatherMeshBoundsWorkflow.h" />
+    <ClInclude Include="Workflows\MeshRecenteringWorkflow.h" />
     <ClInclude Include="Workflows\MshImportWorkflow.h" />
     <ClInclude Include="Workflows\NormalGenerationWorkflow.h" />
     <ClInclude Include="Workflows\PartitioningWorkflow.h" />

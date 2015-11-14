@@ -15,6 +15,7 @@
 #include "Workflows/MeshChunkingWorkflow.h"
 #include "Workflows/GatherMeshBoundsWorkflow.h"
 #include "Workflows/NormalGenerationWorkflow.h"
+#include "Workflows/MeshRecenteringWorkflow.h"
 
 #ifdef main
 # undef main
@@ -37,6 +38,11 @@
 #pragma warning( disable: 4018 ) // signed/unsigned mismatch
 #pragma warning( disable: 4244 ) // floating-point conversion warnings
 #pragma warning( disable: 4267 ) // integer conversion warnings
+
+
+float_3 collection_center;
+bool should_generate_center = bool;
+bool did_generate_center = false;
 
 
 
@@ -109,6 +115,17 @@ void process( const std::string & file )
 
 	workflow_render_mesh( tris );
 	if( volumeTris ) workflow_render_mesh( volumeTris );
+
+	if( should_generate_center )
+	{
+		if( !did_generate_center ) {
+			collection_center = workflow_get_mesh_center( tris );
+			did_generate_center = true;
+		}
+
+		workflow_recenter_mesh( tris, collection_center );
+		if( volumeTris ) workflow_recenter_mesh( volumeTris, collection_center );
+	}
 
 
 	cpu_chunk_array * chunks, * volumeChunks = nullptr;
