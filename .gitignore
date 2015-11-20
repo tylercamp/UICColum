@@ -11,6 +11,7 @@ UIC Data/
 *.suo
 *.user
 *.sln.docstates
+*.fbx
 
 # Build results
 
