@@ -86,7 +86,6 @@ class MshReader
 			startIndex = i + 1;
 		}
 
-		auto time = clock( ) - start;
 		result.reserve( result.size( ) );
 		return result;
 	}
@@ -266,6 +265,6 @@ public:
 
 	bool IsLoaded( )
 	{
-		return false;
+		return PointData.size( ) > 0 && FaceData.size( );
 	}
 };

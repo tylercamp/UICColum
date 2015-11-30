@@ -7,7 +7,7 @@
 
 #include "../Types.h"
 
-void save_chunk( std::string filename, const mesh_chunk & chunk )
+void save_chunk_fbx( std::string filename, const mesh_chunk & chunk )
 {
 	FbxManager * fbxManager = FbxManager::Create( );
 
@@ -77,7 +77,7 @@ void workflow_chunk_export_fbx( const std::string & targetFolder, cpu_chunk_arra
 		std::ostringstream pathName;
 		pathName << targetFolder << "/" << i << ".fbx";
 		auto & chunk = chunks->at( i );
-		save_chunk( pathName.str( ), chunk );
+		save_chunk_fbx( pathName.str( ), chunk );
 	}
 
 	save_chunkset_metadata( targetFolder, chunks );

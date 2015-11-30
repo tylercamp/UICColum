@@ -8,6 +8,9 @@
 
 #define NOT_YET_IMPLEMENTED( ) __debugbreak( )
 
+#define KB(s) ((s)*1024)
+#define MB(s) ((s)*KB(1024))
+
 
 using std::uint32_t;
 using concurrency::index;
@@ -35,6 +38,13 @@ struct triangle
 {
 	float_3 a, b, c;
 	float_3 norm_a, norm_b, norm_c;
+
+	int volumeIndex;
+	float volumeValue;
+
+	triangle( ) : volumeIndex( -1 )
+	{
+	}
 
 	__declspec( property( get = get_center ) ) float_3 center;
 	float_3 get_center( ) const restrict( amp, cpu )
@@ -71,6 +81,7 @@ typedef concurrency::array_view<triangle> gpu_triangle_array;
 typedef concurrency::array_view<float_3> gpu_vertex_array;
 typedef concurrency::array_view<float_3> gpu_normal_array;
 typedef concurrency::array_view<int> gpu_index_array;
+typedef concurrency::array_view<float> gpu_data_array;
 
 typedef concurrency::array_view<mesh_partition_descriptor> gpu_partition_descriptor_array;
 
@@ -78,8 +89,10 @@ typedef concurrency::array_view<mesh_partition_descriptor> gpu_partition_descrip
 typedef std::vector<triangle> cpu_triangle_array;
 typedef std::vector<float_3> cpu_vertex_array;
 typedef std::vector<int> cpu_index_array;
+typedef std::vector<float> cpu_data_array;
 
 typedef std::vector<mesh_partition_descriptor> cpu_partition_descriptor_array;
+
 typedef std::vector<mesh_chunk> cpu_chunk_array;
 
 

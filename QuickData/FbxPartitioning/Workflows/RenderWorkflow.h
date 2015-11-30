@@ -182,6 +182,99 @@ void run_window( const cpu_triangle_array & tris )
 	SDL_Quit( );
 }
 
+void run_window( const cpu_chunk_array & chunks )
+{
+	int width = 1920;
+	int height = 1080;
+
+#ifdef PREVIEW_MESH_HIDPI
+	SetProcessDPIAware( );
+	width *= 1.5;
+	height *= 1.5;
+#endif
+
+	SDL_Init( SDL_INIT_EVERYTHING );
+	SDL_Window * window = SDL_CreateWindow( "", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL );
+	SDL_GL_CreateContext( window );
+	glMatrixMode( GL_PROJECTION );
+	gluPerspective( 90.0, 1920.0 / 1080.0, 1.0, 10000.0 );
+
+	glEnable( GL_DEPTH_TEST );
+	//glDepthFunc( GL_LEQUAL );
+	glEnable( GL_CULL_FACE );
+	glDisable( GL_CULL_FACE );
+
+	float ox = 0.0f, oy = 0.0f, oz = 0.0f;
+
+	glMatrixMode( GL_MODELVIEW );
+	//glTranslatef( -ox, -oy, -oz );
+	//glRotatef( 90.0f, 0.0f, 1.0f, 0.0f );
+	//glRotatef( 45.0f, 1.0f, 0.0f, 0.0f );
+
+	//glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+	glClearColor( 1.0, 1.0, 1.0, 1.0 );
+	bool run = true;
+	while( run )
+	{
+		auto start = clock( );
+		glMatrixMode( GL_MODELVIEW );
+		glLoadIdentity( );
+		glTranslatef( -ox, -oy, -oz );
+		glRotatef( 90.0f, 0.0f, 1.0f, 0.0f );
+		glRotatef( 45.0f, 1.0f, 0.0f, 0.0f );
+
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+		//draw_partitions( partitions );
+
+		//glBegin( GL_POINTS );
+		unsigned long i = 0;
+		glColor3f( 1.0f, 1.0f, 1.0f );
+		for( const auto & chunk : chunks )
+		{
+			glBegin( GL_TRIANGLES );
+			for( auto & tri : chunk.tris )
+			{
+				++i;
+				int c_r = (i & 0xFF);
+				int c_g = (i & 0xFF00) >> 8;
+				int c_b = ((i * 3) & 0xFF0000) >> 16;
+				const auto & a = tri.a;
+				const auto & b = tri.b;
+				const auto & c = tri.c;
+				glColor3f( c_r / 255.0f, c_g / 255.0f, c_b / 255.0f );
+				glVertex3f( a.x, a.y, a.z );
+				glVertex3f( b.x, b.y, b.z );
+				glVertex3f( c.x, c.y, c.z );
+			}
+			glEnd( );
+		}
+
+		SDL_GL_SwapWindow( window );
+
+		SDL_Event e;
+		SDL_PumpEvents( );
+		while( SDL_PollEvent( &e ) )
+			if( e.type == SDL_QUIT )
+				run = false;
+
+		if( GetAsyncKeyState( 'A' ) )
+			ox -= 2.0f;
+		if( GetAsyncKeyState( 'D' ) )
+			ox += 2.0f;
+		if( GetAsyncKeyState( 'W' ) )
+			oz -= 2.0f;
+		if( GetAsyncKeyState( 'S' ) )
+			oz += 2.0f;
+
+		auto time = clock( ) - start;
+
+		Sleep( max( 0, 30 - time ) );
+	}
+
+	SDL_Quit( );
+}
+
 enum RenderType
 {
 	Tris,
@@ -198,4 +291,9 @@ void workflow_render_mesh( gpu_triangle_array * mesh )
 		tris[i] = dev_tris[i];
 
 	run_window( tris );
+}
+
+void workflow_render_mesh( cpu_chunk_array * chunks )
+{
+	run_window( *chunks );
 }

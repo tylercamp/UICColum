@@ -11,6 +11,7 @@
 
 #include "Workflows/TriangulationWorkflow.h"
 #include "Workflows/NormalGenerationWorkflow.h"
+#include "Workflows/VolumeTaggingWorkflow.h"
 #include "Workflows/MeshRecenteringWorkflow.h"
 #include "Workflows/RenderWorkflow.h"
 
@@ -20,6 +21,8 @@
 
 #include "Workflows/ChunkExportFbxWorkflow.h"
 #include "Workflows/ChunkExportBinaryWorkflow.h"
+
+#include "MshHeaderReader.h"
 
 //	(SDL-specific)
 #ifdef main
@@ -103,28 +106,29 @@ void process( const std::string & file, ExportMode exportMode )
 		gpu_vertex_array * volumeData = nullptr;
 
 		gpu_vertex_array * points;
-		gpu_index_array * indices, * innerIndices;
+		gpu_index_array * surfaceIndices, * volumeIndices, * volumeTags;
 
-		workflow_import_msh( file, &points, &indices, &innerIndices );
-		int x = indices->data()[0];
-		int y = innerIndices->data( )[0];
-		workflow_gen_tris( points, indices, &tris );
-		workflow_gen_tris( points, innerIndices, &volumeTris );
+		workflow_import_msh( file, &points, &surfaceIndices, &volumeIndices, &volumeTags );
+		int x = surfaceIndices->data()[0];
+		int y = volumeIndices->data( )[0];
+		workflow_gen_tris( points, surfaceIndices, &tris );
+		workflow_gen_tris( points, volumeIndices, &volumeTris );
 		workflow_gen_normals( tris );
 		workflow_gen_normals( volumeTris );
+		workflow_tag_mesh_volumes( volumeTris, volumeTags );
 		
 		if( volumeData )
 			delete volumeData;
 		delete points;
-		delete indices, innerIndices;
+		delete surfaceIndices, volumeIndices;
 	}
 	else
 		NOT_YET_IMPLEMENTED( );
 
 
 
-	workflow_render_mesh( tris );
-	if( volumeTris ) workflow_render_mesh( volumeTris );
+	//workflow_render_mesh( tris );
+	//if( volumeTris ) workflow_render_mesh( volumeTris );
 
 	if( should_generate_center )
 	{
@@ -141,6 +145,8 @@ void process( const std::string & file, ExportMode exportMode )
 	cpu_chunk_array * chunks, * volumeChunks = nullptr;
 	generate_chunks( tris, &chunks );
 	if( volumeTris ) generate_chunks( volumeTris, &volumeChunks );
+
+	//workflow_render_mesh( chunks );
 
 	CreateDirectoryA( getFileName( file ).c_str( ), nullptr );
 
@@ -174,24 +180,96 @@ void process( const std::string & file, ExportMode exportMode )
 
 
 
+void debug_render_output( const std::string & targetPath )
+{
+	cpu_chunk_array chunks;
+
+	WIN32_FIND_DATAA ffd;
+	LARGE_INTEGER filesize;
+	size_t length_of_arg;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	DWORD dwError = 0;
+
+	std::string inputPath( targetPath );
+	if( inputPath.back( ) != '\\' && inputPath.back( ) != '/' )
+		inputPath += '\\';
+	inputPath += "*.binmesh";
+
+
+	hFind = FindFirstFileA( inputPath.c_str( ), &ffd );
+
+	if( INVALID_HANDLE_VALUE == hFind )
+		return;
+
+	// List all the files in the directory with some info about them.
+
+	do
+	{
+		if( !(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
+		{
+			std::string foundPath = std::string( targetPath ) + ffd.cFileName;
+			BinaryMesh mesh( foundPath );
+			mesh_chunk chunk;
+			chunk.num_tris = mesh.numTris;
+			chunk.tris.resize( chunk.num_tris );
+			for( int i = 0; i < chunk.num_tris; i++ )
+			{
+				auto & tri = chunk.tris[i];
+				tri.a = mesh.vertices[i * 3 + 0];
+				tri.b = mesh.vertices[i * 3 + 1];
+				tri.c = mesh.vertices[i * 3 + 2];
+
+				tri.norm_a = mesh.normals[i * 3 + 2];
+				tri.norm_b = mesh.normals[i * 3 + 2];
+				tri.norm_c = mesh.normals[i * 3 + 2];
+			}
+
+#ifdef _DEBUG
+			if( mesh.numTris < 0 )
+				__debugbreak( );
+#endif
+			chunks.emplace_back( std::move( chunk ) );
+
+			filesize.LowPart = ffd.nFileSizeLow;
+			filesize.HighPart = ffd.nFileSizeHigh;
+			printf( "  %s   %l bytes\n", ffd.cFileName, filesize.QuadPart );
+		}
+	} while( FindNextFileA( hFind, &ffd ) != 0 );
+
+	dwError = GetLastError( );
+	if( dwError != ERROR_NO_MORE_FILES )
+		return;
+
+	FindClose( hFind );
+
+	//workflow_render_mesh( &chunks );
+}
+
+
+
 //#ifdef _DEBUG
 int main( )
 //#else
 //int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow )
 //#endif
 {
+	//debug_render_output( "IanArteries5.GAMBIT/surfaces/" );
+
+	MshHeaderReader reader( "IanArteries5-1.mm" );
+
+	return 0;
+
 	auto start = clock( );
 
-	//MshReader mshReader( "IanArteries5.GAMBIT.msh" );
-	//return 0;
+	process( "bsArteries.fbx", EXPORT_BINARY );
+	process( "bsCSF.fbx", EXPORT_BINARY );
+	process( "bsGray.fbx", EXPORT_BINARY );
+	process( "bsSkull.fbx", EXPORT_BINARY );
+	process( "bsVeins.fbx", EXPORT_BINARY );
+	process( "bsWhite.fbx", EXPORT_BINARY );
 
-	//process( "bsArteries.fbx" );
-	//process( "bsCSF.fbx" );
-	process( "IanArteries5.GAMBIT.msh", EXPORT_FBX );
-	//process( "bsGray.fbx" );
-	//process( "bsSkull.fbx" );
-	//process( "bsVeins.fbx" );
-	//process( "bsWhite.fbx" );
+	//processMsh( "IanArteries5.GAMBIT.msh", EXPORT_BINARY, { "IanArteries5-1.mm" } );
+	//process( "IanArteries5.GAMBIT.msh", EXPORT_BINARY );
 
 	auto end = clock( );
 
