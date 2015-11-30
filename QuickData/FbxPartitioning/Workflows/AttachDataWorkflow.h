@@ -17,5 +17,6 @@ void workflow_attach_data_to_mesh( gpu_triangle_array * mesh, gpu_data_array * d
 	{
 		auto tri = rmesh[idx];
 		tri.volumeValues[storeIndex] = rdata[tri.volumeIndex - referenceStartIndex];
+		rmesh[idx] = tri;
 	} );
 }
