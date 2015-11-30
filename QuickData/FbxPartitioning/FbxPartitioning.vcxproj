@@ -167,6 +167,7 @@
     <ClInclude Include="BinaryMesh.h" />
     <ClInclude Include="MshHeaderReader.h" />
     <ClInclude Include="MshReader.h" />
+    <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="Utilities.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="Workflows\AttachDataWorkflow.h" />
