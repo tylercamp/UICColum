@@ -172,8 +172,15 @@ void process( const std::string & file, ExportMode exportMode, const std::vector
 	/*** PARTITION DATA ***/
 
 	cpu_chunk_array * chunks, * volumeChunks = nullptr;
+	std::cout << "Processing surface data" << std::endl;
 	generate_chunks( tris, &chunks );
-	if( volumeTris ) generate_chunks( volumeTris, &volumeChunks );
+	std::cout << "Processing surface data DONE" << std::endl;
+	if( volumeTris )
+	{
+		std::cout << "Processing volume data" << std::endl;
+		generate_chunks( volumeTris, &volumeChunks );
+		std::cout << "Processing volume data DONE" << std::endl;
+	}
 
 	//workflow_render_mesh( chunks );
 
@@ -183,7 +190,7 @@ void process( const std::string & file, ExportMode exportMode, const std::vector
 
 	CreateDirectoryA( getFileName( file ).c_str( ), nullptr );
 
-	typedef void( *ChunkExportWorkflow )(const std::string &, cpu_chunk_array *);
+	typedef void( *ChunkExportWorkflow )(const std::string &, cpu_chunk_array *, int);
 	//	Strategy pattern
 	ChunkExportWorkflow exportWorkflow = nullptr;
 	switch( exportMode )
@@ -196,8 +203,8 @@ void process( const std::string & file, ExportMode exportMode, const std::vector
 		break;
 	}
 
-	exportWorkflow( getFileName( file ) + "/surfaces", chunks );
-	if( volumeChunks ) exportWorkflow( getFileName( file ) + "/volumes", volumeChunks );
+	exportWorkflow( getFileName( file ) + "/surfaces", chunks, 0 );
+	if( volumeChunks ) exportWorkflow( getFileName( file ) + "/volumes", volumeChunks, dataFiles.size( ) );
 
 
 

@@ -65,7 +65,7 @@ void save_chunkset_metadata( std::string filename, cpu_chunk_array * chunkset )
 	file.close( );
 }
 
-void workflow_chunk_export_fbx( const std::string & targetFolder, cpu_chunk_array * chunks )
+void workflow_chunk_export_fbx( const std::string & targetFolder, cpu_chunk_array * chunks, int numEmbeddedDataStores )
 {
 	std::cout << "Saving chunks... ";
 	CreateDirectoryA( targetFolder.c_str( ), nullptr );

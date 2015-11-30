@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#define ASSERT(x) if( !x ) __debugbreak( )
 #define NOT_YET_IMPLEMENTED( ) __debugbreak( )
 
 #define KB(s) ((s)*1024)
@@ -61,7 +62,7 @@ struct mesh_partition_descriptor
 {
 	float_3 bounds_start, bounds_end;
 
-	bool contains_point( float_3 p ) restrict( cpu, amp )
+	bool contains_point( float_3 p ) const restrict( cpu, amp )
 	{
 		return
 			bounds_start.x <= p.x &&

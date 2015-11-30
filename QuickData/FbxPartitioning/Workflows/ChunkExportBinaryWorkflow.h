@@ -3,7 +3,7 @@
 #include "../Types.h"
 #include "../BinaryMesh.h"
 
-void save_chunk_binary( std::string filename, const mesh_chunk & chunk )
+void save_chunk_binary( std::string filename, const mesh_chunk & chunk, int numDataStores )
 {
 	int numTris = chunk.num_tris;
 
@@ -14,8 +14,15 @@ void save_chunk_binary( std::string filename, const mesh_chunk & chunk )
 	mesh.normals = new float_3[numTris * 3];
 	mesh.volumes = new int[numTris * 3];
 
+	for( int i = 0; i < numDataStores; i++ )
+		mesh.dataStores[i] = new float[numTris * 3];
+
+	mesh.numUsedDatastores = numDataStores;
+
 	//	Assigning volumeIndex to triangles not yet done
 	//NOT_YET_IMPLEMENTED( );
+
+	ASSERT( chunk.tris.size( ) == chunk.num_tris );
 
 	std::size_t dataIndex = 0;
 	for( std::size_t i = 0; i < numTris; i++ )
@@ -25,16 +32,22 @@ void save_chunk_binary( std::string filename, const mesh_chunk & chunk )
 		mesh.vertices[dataIndex] = tri.a;
 		mesh.normals[dataIndex] = tri.norm_a;
 		mesh.volumes[dataIndex] = tri.volumeIndex;
+		for( int s = 0; s < numDataStores; s++ )
+			mesh.dataStores[s][dataIndex] = tri.volumeValues[s];
 		++dataIndex;
 
 		mesh.vertices[dataIndex] = tri.b;
 		mesh.normals[dataIndex] = tri.norm_b;
 		mesh.volumes[dataIndex] = tri.volumeIndex;
+		for( int s = 0; s < numDataStores; s++ )
+			mesh.dataStores[s][dataIndex] = tri.volumeValues[s];
 		++dataIndex;
 
 		mesh.vertices[dataIndex] = tri.c;
 		mesh.normals[dataIndex] = tri.norm_c;
 		mesh.volumes[dataIndex] = tri.volumeIndex;
+		for( int s = 0; s < numDataStores; s++ )
+			mesh.dataStores[s][dataIndex] = tri.volumeValues[s];
 		++dataIndex;
 	}
 
@@ -42,7 +55,7 @@ void save_chunk_binary( std::string filename, const mesh_chunk & chunk )
 	mesh.SaveTo( filename );
 }
 
-void workflow_chunk_export_binary( const std::string & targetFolder, cpu_chunk_array * chunks )
+void workflow_chunk_export_binary( const std::string & targetFolder, cpu_chunk_array * chunks, int numDataStores )
 {
 	std::cout << "Saving chunks... ";
 	CreateDirectoryA( targetFolder.c_str( ), nullptr );
@@ -54,6 +67,6 @@ void workflow_chunk_export_binary( const std::string & targetFolder, cpu_chunk_a
 		std::ostringstream pathName;
 		pathName << targetFolder << "/" << i << ".binmesh";
 		auto & chunk = chunks->at( i );
-		save_chunk_binary( pathName.str( ), chunk );
+		save_chunk_binary( pathName.str( ), chunk, numDataStores );
 	}
 }

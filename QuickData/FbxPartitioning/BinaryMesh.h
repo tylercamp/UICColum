@@ -7,12 +7,14 @@
 
 const int FILE_START_TAG = 0x2345; // Verifies file format
 const int TRIS_COUNT_TAG = 0x0001; // Abbreviation of triangle list into a single tris count (indexing is then linear)
+const int DATASTORES_COUNT_TAG = 0x0002; // # of data stores attached to this mesh
 
 //	Data buffer start tags
 const int COLORS_START_TAG = 0x0010;
 const int VERTICES_START_TAG = 0x0020;
 const int NORMALS_START_TAG = 0x0030;
 const int VOLUMES_START_TAG = 0x0040;
+const int DATASTORE_START_TAG = 0x0050;
 
 
 
@@ -71,6 +73,13 @@ class BinaryMesh
 		fread( *targetBuffer, sizeof( int ), count, source );
 	}
 
+	void LoadBufferFrom( FILE * source, float ** targetBuffer, std::size_t count )
+	{
+		*targetBuffer = new float[count];
+
+		fread( *targetBuffer, sizeof( float ), count, source );
+	}
+
 	void WriteBufferTo( FILE * target, float_3 * buffer )
 	{
 		fwrite( buffer, sizeof( float_3 ), numTris * 3, target );
@@ -81,9 +90,16 @@ class BinaryMesh
 		fwrite( buffer, sizeof( int ), numTris * 3, target );
 	}
 
+	void WriteBufferTo( FILE * target, float * buffer )
+	{
+		fwrite( buffer, sizeof( float ), numTris * 3, target );
+	}
+
 public:
 	float_3 * colors, * vertices, * normals;
 	int * volumes;
+	float * dataStores[TRI_NUM_DATASTORES];
+	int numUsedDatastores;
 	std::size_t numTris;
 
 	BinaryMesh( )
@@ -92,6 +108,11 @@ public:
 
 		vertices = normals = colors = nullptr;
 		volumes = nullptr;
+
+		for( int i = 0; i < TRI_NUM_DATASTORES; i++ )
+			dataStores[i] = nullptr;
+
+		numUsedDatastores = 0;
 	}
 
 	BinaryMesh( const std::string & filePath )
@@ -133,6 +154,14 @@ public:
 			throw std::exception( "Invalidly-formatted binary mesh file." );
 
 		fread( &numTris, 4, 1, file );
+
+		//	And then DataStoresCountTag
+		int dataStoresCountTag;
+		fread( &dataStoresCountTag, 4, 1, file );
+		if( dataStoresCountTag != DATASTORES_COUNT_TAG )
+			throw std::exception( "Invalidly-formatted binary mesh file." ); // Could also just not have data stores...
+
+		fread( &numUsedDatastores, 4, 1, file );
 		
 		while( ftell( file ) != fileSize )
 		{
@@ -151,6 +180,11 @@ public:
 				break;
 			case(VOLUMES_START_TAG) :
 				LoadBufferFrom( file, &volumes, numTris * 3 );
+				break;
+			case(DATASTORE_START_TAG) :
+				int storeIndex;
+				fread( &storeIndex, 4, 1, file );
+				LoadBufferFrom( file, dataStores + storeIndex, numTris * 3 );
 				break;
 
 			default:
@@ -185,6 +219,9 @@ public:
 		fwrite( &TRIS_COUNT_TAG, sizeof( int ), 1, file );
 		fwrite( &numTris, sizeof( int ), 1, file );
 
+		fwrite( &DATASTORES_COUNT_TAG, sizeof( int ), 1, file );
+		fwrite( &numUsedDatastores, sizeof( int ), 1, file );
+
 		if( colors ) {
 			//out << (int)COLORS_START_TAG;
 			fwrite( &COLORS_START_TAG, sizeof( int ), 1, file );
@@ -206,6 +243,17 @@ public:
 		if( volumes ) {
 			fwrite( &VOLUMES_START_TAG, sizeof( int ), 1, file );
 			WriteBufferTo( file, volumes );
+		}
+
+		for( int i = 0; i < numUsedDatastores; i++ )
+		{
+			if( dataStores[i] )
+			{
+				fwrite( &DATASTORE_START_TAG, sizeof( int ), 1, file );
+				int storeIndex = i;
+				fwrite( &storeIndex, sizeof( int ), 1, file );
+				WriteBufferTo( file, dataStores[i] );
+			}
 		}
 
 		fclose( file );
