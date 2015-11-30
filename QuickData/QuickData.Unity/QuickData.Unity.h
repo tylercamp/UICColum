@@ -5,7 +5,11 @@
 
 #define UNITY_NATIVE_EXPORT extern "C" __declspec(dllexport)
 
-#define NOT_YET_IMPLEMENTED( ) __debugbreak( )
+#ifdef _DEBUG
+# define NOT_YET_IMPLEMENTED( ) __debugbreak( )
+#else
+# define NOT_YET_IMPLEMENTED( )
+#endif
 
 struct ParsedMeshStructure
 {
@@ -15,9 +19,11 @@ struct ParsedMeshStructure
 	float * normalData;
 	float * colorData;
 
+	int * volumeData;
+
 	int numTris;
 
-	ParsedMeshStructure( ) : vertexData( nullptr ), normalData( nullptr ), colorData( nullptr ), numTris( 0 )
+	ParsedMeshStructure( ) : vertexData( nullptr ), normalData( nullptr ), colorData( nullptr ), volumeData( nullptr ), numTris( 0 )
 	{
 
 	}
@@ -29,4 +35,6 @@ struct MeshDataset
 };
 
 ParsedMeshStructure * LoadFbxMesh( const char * targetPath );
-UNITY_NATIVE_EXPORT MeshDataset * LoadMeshSet( const char * searchPath, const char * searchString );
+ParsedMeshStructure * LoadBinaryMesh( const char * targetPath );
+
+UNITY_NATIVE_EXPORT bool LoadMeshSet( const char * searchPath, const char * searchString );

@@ -6,10 +6,38 @@
 #include <iostream>
 #include "QuickData.Unity.h"
 
+#include "../FbxPartitioning/BinaryMesh.h"
+
 #pragma comment( lib, "libfbxsdk.lib" )
 
 
 //	http://ericeastwood.com/blog/17/unity-and-dlls-c-managed-and-c-unmanaged
+
+
+
+
+ParsedMeshStructure * LoadBinaryMesh( const char * targetPath )
+{
+	BinaryMesh mesh( targetPath );
+
+	ParsedMeshStructure * result = new ParsedMeshStructure( );
+	result->path = targetPath;
+	result->numTris = mesh.numTris;
+	//	float_3 data should just be contiguous floats
+	result->colorData = reinterpret_cast<float *>( mesh.colors );
+	result->normalData = reinterpret_cast<float *>( mesh.normals );
+	result->vertexData = reinterpret_cast<float *>( mesh.vertices );
+	result->volumeData = mesh.volumes;
+
+	//	Take ownership of these arrays, avoid copy
+	mesh.colors = nullptr;
+	mesh.normals = nullptr;
+	mesh.vertices = nullptr;
+	mesh.volumes = nullptr;
+
+	return result;
+}
+
 
 
 
@@ -108,9 +136,10 @@ ParsedMeshStructure * LoadFbxMesh( const char * targetPath )
 int main( )
 {
 	auto start = clock( );
-	auto meshSet = LoadMeshSet( "E:\\Dropbox\\HotRepos\\UICColum\\QuickData\\FbxPartitioning\\bsCSF\\surfaces\\", "*.fbx" );
+	//auto meshSet = LoadMeshSet( "E:\\Dropbox\\HotRepos\\UICColum\\QuickData\\FbxPartitioning\\bsCSF\\surfaces\\", "*.binmesh" );
+	LoadMeshSet( "C:\\Users\\algor\\Dropbox\\hotrepos\\UICColum\\QuickData\\FbxPartitioning\\IanArteries5.GAMBIT\\volumes\\", "*.binmesh" );
 
-	std::cout << "Loaded " << meshSet->meshes.size( ) << " meshes" << std::endl;
+	//std::cout << "Loaded " << meshSet->meshes.size( ) << " meshes" << std::endl;
 
 	std::cout << "Took " << (clock( ) - start) << "ms";
 
