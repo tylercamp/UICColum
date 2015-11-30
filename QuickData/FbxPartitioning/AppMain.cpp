@@ -8,12 +8,14 @@
 
 #include "Workflows/ImportFbxWorkflow.h"
 #include "Workflows/ImportMshWorkflow.h"
+#include "Workflows/ImportMshHeaderWorkflow.h"
 
 #include "Workflows/TriangulationWorkflow.h"
 #include "Workflows/NormalGenerationWorkflow.h"
 #include "Workflows/VolumeTaggingWorkflow.h"
 #include "Workflows/MeshRecenteringWorkflow.h"
 #include "Workflows/RenderWorkflow.h"
+#include "Workflows/AttachDataWorkflow.h"
 
 #include "Workflows/GatherMeshBoundsWorkflow.h"
 #include "Workflows/PartitioningWorkflow.h"
@@ -22,7 +24,7 @@
 #include "Workflows/ChunkExportFbxWorkflow.h"
 #include "Workflows/ChunkExportBinaryWorkflow.h"
 
-#include "MshHeaderReader.h"
+
 
 //	(SDL-specific)
 #ifdef main
@@ -78,7 +80,7 @@ void generate_chunks( gpu_triangle_array * tris, cpu_chunk_array ** out_chunks )
 	delete tags, partitionCounts;
 }
 
-void process( const std::string & file, ExportMode exportMode )
+void process( const std::string & file, ExportMode exportMode, const std::vector<std::string> & dataFiles )
 {
 	auto start = clock( );
 
@@ -86,6 +88,9 @@ void process( const std::string & file, ExportMode exportMode )
 	
 	gpu_triangle_array * tris = nullptr, * volumeTris = nullptr;
 
+
+
+	/*** LOAD MESH DATA ***/
 
 	//	Determine loading method
 	std::string fileExt = getFileExtension( file );
@@ -125,10 +130,12 @@ void process( const std::string & file, ExportMode exportMode )
 	else
 		NOT_YET_IMPLEMENTED( );
 
-
-
 	//workflow_render_mesh( tris );
 	//if( volumeTris ) workflow_render_mesh( volumeTris );
+
+
+
+	/*** RECENTER MESHES and ATTACH DATA FILES ***/
 
 	if( should_generate_center )
 	{
@@ -141,12 +148,38 @@ void process( const std::string & file, ExportMode exportMode )
 		if( volumeTris ) workflow_recenter_mesh( volumeTris, collection_center );
 	}
 
+	for( int i = 0; i < dataFiles.size( ); i++ )
+	{
+		auto & filePath = dataFiles[i];
+		std::string fileExt = getFileExtension( filePath );
+
+		//	Only supporting MSH Header .mm files
+		if( fileExt == "mm" )
+		{
+			std::cout << "Loading supplemental data file " << filePath << "... ";
+			gpu_data_array * data;
+			workflow_import_msh_header( filePath, &data );
+			workflow_attach_data_to_mesh( volumeTris, data, i, 1 ); // MSH volumes are 1-indexed
+			delete data;
+			std::cout << "Done." << std::endl;
+		}
+		else
+			NOT_YET_IMPLEMENTED( );
+	}
+
+
+
+	/*** PARTITION DATA ***/
 
 	cpu_chunk_array * chunks, * volumeChunks = nullptr;
 	generate_chunks( tris, &chunks );
 	if( volumeTris ) generate_chunks( volumeTris, &volumeChunks );
 
 	//workflow_render_mesh( chunks );
+
+
+
+	/*** SAVE TO DISK ***/
 
 	CreateDirectoryA( getFileName( file ).c_str( ), nullptr );
 
@@ -167,6 +200,9 @@ void process( const std::string & file, ExportMode exportMode )
 	if( volumeChunks ) exportWorkflow( getFileName( file ) + "/volumes", volumeChunks );
 
 
+
+	/*** CLEANUP ***/
+	
 	delete tris;
 	if( volumeTris )
 		delete volumeTris;
@@ -255,20 +291,18 @@ int main( )
 {
 	//debug_render_output( "IanArteries5.GAMBIT/surfaces/" );
 
-	MshHeaderReader reader( "IanArteries5-1.mm" );
 
-	return 0;
 
 	auto start = clock( );
 
-	process( "bsArteries.fbx", EXPORT_BINARY );
-	process( "bsCSF.fbx", EXPORT_BINARY );
-	process( "bsGray.fbx", EXPORT_BINARY );
-	process( "bsSkull.fbx", EXPORT_BINARY );
-	process( "bsVeins.fbx", EXPORT_BINARY );
-	process( "bsWhite.fbx", EXPORT_BINARY );
+	//process( "bsArteries.fbx", EXPORT_BINARY );
+	//process( "bsCSF.fbx", EXPORT_BINARY );
+	//process( "bsGray.fbx", EXPORT_BINARY );
+	//process( "bsSkull.fbx", EXPORT_BINARY );
+	//process( "bsVeins.fbx", EXPORT_BINARY );
+	//process( "bsWhite.fbx", EXPORT_BINARY );
 
-	//processMsh( "IanArteries5.GAMBIT.msh", EXPORT_BINARY, { "IanArteries5-1.mm" } );
+	process( "IanArteries5.GAMBIT.msh", EXPORT_BINARY, { "IanArteries5-1.mm" } );
 	//process( "IanArteries5.GAMBIT.msh", EXPORT_BINARY );
 
 	auto end = clock( );

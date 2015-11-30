@@ -169,7 +169,9 @@
     <ClInclude Include="MshReader.h" />
     <ClInclude Include="Utilities.h" />
     <ClInclude Include="Types.h" />
+    <ClInclude Include="Workflows\AttachDataWorkflow.h" />
     <ClInclude Include="Workflows\ChunkExportBinaryWorkflow.h" />
+    <ClInclude Include="Workflows\ImportMshHeaderWorkflow.h" />
     <ClInclude Include="Workflows\MeshChunkingWorkflow.h" />
     <ClInclude Include="Workflows\ImportFbxWorkflow.h" />
     <ClInclude Include="Workflows\ChunkExportFbxWorkflow.h" />

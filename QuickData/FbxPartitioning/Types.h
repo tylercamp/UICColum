@@ -34,16 +34,20 @@ using concurrency::graphics::float_3;
 
 
 
+#define TRI_NUM_DATASTORES 1
+
 struct triangle
 {
 	float_3 a, b, c;
 	float_3 norm_a, norm_b, norm_c;
 
 	int volumeIndex;
-	float volumeValue;
+	float volumeValues[TRI_NUM_DATASTORES];
 
 	triangle( ) : volumeIndex( -1 )
 	{
+		for( int i = 0; i < TRI_NUM_DATASTORES; i++ )
+			volumeValues[i] = 0.0f;
 	}
 
 	__declspec( property( get = get_center ) ) float_3 center;
