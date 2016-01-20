@@ -63,24 +63,24 @@ class MshHeaderReader
 		result.reserve( result.size( ) );
 	}
 
-	void Parse( const char * fileData, std::size_t length )
+	//	Returns offset into array
+	int ParseNextList( const std::vector<std::string> & fileLines, int baseIndex )
 	{
-		std::vector<std::string> lines;
-		SplitLines( &lines, fileData, length );
-
-		//	# of data to load (declared in-file)
-		int numData = -1;
+		//	# of volumes (declared in-file)
+		int numVolumes = -1;
 
 		//	Find volume data start
-		int dataStartIndex = -1;
-		for( int i = 0; i < lines.size( ); i++ )
+		int dataStartIndex;
+		for( dataStartIndex = baseIndex; dataStartIndex < fileLines.size( ); dataStartIndex++ )
 		{
-			//	Looking for something like '(12(...)('
-			if( lines[i].find( "(12" ) == 0 && lines[i].back( ) == '(' )
-			{
-				//	Extract data bounds from data list declaration (load numData)
+			int i = dataStartIndex;
 
-				std::string line = lines[i];
+			//	Looking for something like '(12(...)('
+			if( fileLines[i].find( "(12" ) == 0 && fileLines[i].back( ) == '(' )
+			{
+				//	Extract data bounds from data list declaration (get numVolumes)
+
+				std::string line = fileLines[i];
 				//	# of volumes held in inner parentheses, after '(12('
 				int innerParenthesesStart = 4;
 				int innerParenthesesEnd = line.find_first_of( ')' );
@@ -91,7 +91,7 @@ class MshHeaderReader
 				int firstVolumeIndex = ParseHexInt( dataDef[1] );
 				int lastVolumeIndex = ParseHexInt( dataDef[2] );
 
-				numData = lastVolumeIndex - firstVolumeIndex + 1;
+				numVolumes = lastVolumeIndex - firstVolumeIndex + 1;
 
 				dataStartIndex = i + 1;
 				break;
@@ -100,23 +100,40 @@ class MshHeaderReader
 
 		if( dataStartIndex < 0 )
 			//	Invalid file (or just new format?)
-			return;
+			return 0;
 
-		data.resize( numData );
+		//	No more data
+		if( numVolumes < 0 )
+			return fileLines.size( ) - baseIndex;
 
+		std::vector<double> result;
+		result.reserve( numVolumes );
+
+		int lastLine = dataStartIndex;
 		//	Gather data until we reach a closing parenthesis
-		for( int i = dataStartIndex; i < lines.size( ); i++ )
+		for( int i = dataStartIndex; i < fileLines.size( ); i++ )
 		{
-			const auto & line = lines[i];
+			const auto & line = fileLines[i];
 			if( line[0] == ')' )
+			{
+				lastLine = i;
 				break;
+			}
 
-			data[i - dataStartIndex] = ParseFloat( line );
+			result.push_back( ParseFloat( line ) );
 		}
+
+		if( result.size( ) > 0 )
+		{
+			data.emplace_back( std::move( result ) );
+			std::cout << "Loaded store " << data.size( ) << std::endl;
+		}
+
+		return lastLine - baseIndex;
 	}
 
 public:
-	std::vector<float> data;
+	std::vector<std::vector<double>> data;
 
 	MshHeaderReader( const std::string & filepath )
 	{
@@ -136,6 +153,22 @@ public:
 		fread( fileData, 1, filesize, file );
 		fclose( file );
 
-		Parse( fileData, filesize );
+		std::cout << "Preprocessing data... ";
+		std::vector<std::string> lines;
+		SplitLines( &lines, fileData, filesize );
+		std::cout << "Done." << std::endl;
+
+		int offset = 0;
+		while( offset < lines.size( ) )
+		{
+			//	Ignore empty lines
+			if( removeWhitespace( lines[offset] ).size( ) == 0 )
+			{
+				++offset;
+				continue;
+			}
+
+			offset += ParseNextList( lines, offset );
+		}
 	}
 };

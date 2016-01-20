@@ -137,6 +137,9 @@ void run_window( const cpu_triangle_array & tris )
 
 		//draw_partitions( partitions );
 
+		//const float scale = 100.0f;
+		const float scale = 1.0f;
+
 		glBegin( GL_TRIANGLES );
 		//glBegin( GL_POINTS );
 		unsigned long i = 0;
@@ -147,9 +150,9 @@ void run_window( const cpu_triangle_array & tris )
 			int c_r = (i & 0xFF);
 			int c_g = (i & 0xFF00) >> 8;
 			int c_b = ((i * 3) & 0xFF0000) >> 16;
-			const auto & a = tri.a;
-			const auto & b = tri.b;
-			const auto & c = tri.c;
+			const auto & a = tri.a * scale;
+			const auto & b = tri.b * scale;
+			const auto & c = tri.c * scale;
 			glColor3f( c_r / 255.0f, c_g / 255.0f, c_b / 255.0f );
 			glVertex3f( a.x, a.y, a.z );
 			glVertex3f( b.x, b.y, b.z );
@@ -275,6 +278,154 @@ void run_window( const cpu_chunk_array & chunks )
 	SDL_Quit( );
 }
 
+void run_window( const cpu_chunk_array & chunks, const cpu_data_sequence_array & volumeStates )
+{
+	int width = 1920;
+	int height = 1080;
+
+#ifdef PREVIEW_MESH_HIDPI
+	SetProcessDPIAware( );
+	width *= 1.85;
+	height *= 1.85;
+#endif
+
+
+	int currentFrameIndex = 0;
+	int numStates = volumeStates.size( );
+
+	double volMin = 1e10;
+	double volMax = 1e-10;
+	for( auto state : volumeStates )
+	{
+		for( int v = 0; v < state->size( ); v++ )
+		{
+			volMin = min( state->at( v ), volMin );
+			volMax = max( state->at( v ), volMax );
+		}
+	}
+
+	//	Normalize within range for rendering
+	for( auto state : volumeStates )
+	{
+		for( int v = 0; v < state->size( ); v++ )
+		{
+			double & val = state->at( v );
+			val = (val - volMin) / (volMax - volMin);
+		}
+	}
+
+
+	float_3 minColor = float_3( 0.0f, 0.0f, 0.0f );
+	float_3 maxColor = float_3( 0.0f, 0.0f, 1.0f );
+
+
+	SDL_Init( SDL_INIT_EVERYTHING );
+	SDL_Window * window = SDL_CreateWindow( "", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_OPENGL );
+	SDL_GL_CreateContext( window );
+	glMatrixMode( GL_PROJECTION );
+	gluPerspective( 90.0, 1920.0 / 1080.0, 1.0, 10000.0 );
+
+	glEnable( GL_DEPTH_TEST );
+	//glDepthFunc( GL_LEQUAL );
+	//glEnable( GL_CULL_FACE );
+	
+	glDisable( GL_CULL_FACE );
+	glEnable( GL_BLEND );
+
+	auto glBlendEquation = (void( *)(GLenum))wglGetProcAddress( "glBlendEquation" );
+	const GLenum GL_MAX = 0x8008;
+	//glBlendEquation( GL_MAX );
+
+	//glBlendFunc( GL_ONE, GL_ONE );
+		
+	//glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+
+	float ox = 0.0f, oy = 0.0f, oz = 0.0f;
+	float ry = 0.0f;
+
+	float frameAdvanceTime = 3.5f;
+	auto animStart = clock( );
+
+	//glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+	//glClearColor( 0.0, 1.0, 0.0, 1.0 );
+	glClearColor( minColor.r, minColor.g, minColor.b, 1.0f );
+	bool run = true;
+	while( run )
+	{
+		if( clock( ) - animStart > frameAdvanceTime * 1000 )
+		{
+			if( ++currentFrameIndex == volumeStates.size( ) )
+				currentFrameIndex = 0;
+			animStart = clock( );
+			//std::cout << "Frame " << currentFrameIndex << std::endl;
+		}
+
+		auto start = clock( );
+		glMatrixMode( GL_MODELVIEW );
+		glLoadIdentity( );
+		glTranslatef( -ox, -oy, -oz );
+		glRotatef( 00.0f + ry, 0.0f, 1.0f, 0.0f );
+		//glRotatef( 45.0f, 1.0f, 0.0f, 0.0f );
+
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+		//draw_partitions( partitions );
+
+		const double scale = 100.0;
+
+		//glBegin( GL_POINTS );
+		glColor3f( 1.0f, 1.0f, 1.0f );
+		for( const auto & chunk : chunks )
+		{
+			unsigned long i = 0;
+			glBegin( GL_TRIANGLES );
+			for( auto & tri : chunk.tris )
+			{
+				double val = volumeStates[currentFrameIndex]->at(tri.volumeIndex);
+				//float_3 color = maxColor * val + minColor * (1 - val);
+				//float_3 color = 0.01f * float_3( 1.0f ) + maxColor * pow( val, 1.25f );
+				float_3 color = float_3( tri.volumeIndex % 2048, tri.volumeIndex / 2048, 0.0f ) / 2048.0f;
+				glColor3f( color.r, color.g, color.b );
+				const auto & a = tri.a * scale;
+				const auto & b = tri.b * scale;
+				const auto & c = tri.c * scale;
+				glVertex3f( a.x, a.y, a.z );
+				glVertex3f( b.x, b.y, b.z );
+				glVertex3f( c.x, c.y, c.z );
+				++i;
+			}
+			glEnd( );
+		}
+
+		SDL_GL_SwapWindow( window );
+
+		SDL_Event e;
+		SDL_PumpEvents( );
+		while( SDL_PollEvent( &e ) )
+			if( e.type == SDL_QUIT )
+				run = false;
+
+		if( GetAsyncKeyState( 'A' ) ) ox -= 2.0f;
+		if( GetAsyncKeyState( 'D' ) ) ox += 2.0f;
+		if( GetAsyncKeyState( 'W' ) ) oz -= 2.0f;
+		if( GetAsyncKeyState( 'S' ) ) oz += 2.0f;
+		if( GetAsyncKeyState( 'Z' ) ) oy -= 2.0f;
+		if( GetAsyncKeyState( 'X' ) ) oy += 2.0f;
+
+		if( GetAsyncKeyState( VK_UP ) ) { currentFrameIndex++; animStart = clock( ); }
+		if( GetAsyncKeyState( VK_DOWN ) ) { currentFrameIndex--; animStart = clock( ); }
+
+		if( currentFrameIndex < 0 ) currentFrameIndex = numStates - 1;
+		if( currentFrameIndex == numStates ) currentFrameIndex = 0; animStart = clock( );
+
+		auto time = clock( ) - start;
+
+		Sleep( max( 0, 30 - time ) );
+	}
+
+	SDL_Quit( );
+}
+
 enum RenderType
 {
 	Tris,
@@ -296,4 +447,9 @@ void workflow_render_mesh( gpu_triangle_array * mesh )
 void workflow_render_mesh( cpu_chunk_array * chunks )
 {
 	run_window( *chunks );
+}
+
+void workflow_render_volume_mesh( cpu_chunk_array * chunks, cpu_data_sequence_array * sequence )
+{
+	run_window( *chunks, *sequence );
 }

@@ -3,7 +3,7 @@
 #include "../Types.h"
 #include "../Utilities.h"
 
-void workflow_gen_normals( gpu_triangle_array * tris )
+void workflow_gen_normals( gpu_triangle_array * tris, bool reverse = false )
 {
 	using namespace concurrency::fast_math;
 
@@ -14,15 +14,19 @@ void workflow_gen_normals( gpu_triangle_array * tris )
 		[=]( index<1> idx ) restrict( amp )
 	{
 		auto & tri = mesh[idx];
+		if( reverse )
+		{
+			auto a = tri.a;
+			tri.a = tri.c;
+			tri.c = a;
+		}
+
 		auto a_b = tri.b - tri.a;
 		auto a_c = tri.c - tri.a;
-		auto norm = cross( a_b, a_c );
+		auto normal = norm( cross( a_b, a_c ) );
 
-		float normLength = sqrtf( norm.x * norm.x + norm.y * norm.y + norm.z * norm.z );
-		norm /= normLength;
-
-		tri.norm_a = norm;
-		tri.norm_b = norm;
-		tri.norm_c = norm;
+		tri.norm_a = normal;
+		tri.norm_b = normal;
+		tri.norm_c = normal;
 	} );
 }

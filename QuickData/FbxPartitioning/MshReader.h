@@ -24,12 +24,14 @@ struct MshFace
 	bool is_inner;
 };
 
+//	A collection of MshPoint data
 struct MshPointData
 {
 	std::size_t count;
 	std::vector<MshPoint> data;
 };
 
+//	A collection of MshFace data
 struct MshFaceData
 {
 	std::size_t count;
@@ -65,6 +67,27 @@ class MshReader
 		return result;
 	}
 
+	void SplitSpaces( std::vector<std::string> * output, const std::string & text )
+	{
+		auto start = clock( );
+
+		std::vector<std::string> & result = *output;
+
+		int startIndex = 0;
+		for( std::size_t i = 0; i < text.length( ); i++ )
+		{
+			if( text[i] != ' ' )
+				continue;
+
+			std::string line;
+			line.assign( text.data( ) + startIndex, text.data( ) + i );
+			result.emplace_back( line );
+			startIndex = i + 1;
+		}
+
+		result.reserve( result.size( ) );
+	}
+
 
 
 	std::vector<std::string> GenerateLines( const char * fileData, int length )
@@ -95,8 +118,11 @@ public:
 	std::vector<MshPointData> PointData;
 	std::vector<MshFaceData> FaceData;
 
+	int VolumeCount;
+
 	MshReader( const std::string & filename )
 	{
+		VolumeCount = 0;
 		Parse( filename );
 	}
 
@@ -235,10 +261,21 @@ public:
 				if( lineText[0] != '(' )
 					continue;
 
+				int listType = ParseInt( lineText.substr( 1, lineText.find( ' ' ) ) );
+				if( listType == 12 )
+				{
+					std::cout << "Reading volume count...";
+					std::vector<std::string> list;
+					int listStart = lineText.find_last_of( '(' ) + 1;
+					int listEnd = lineText.find_first_of( ')' );
+					SplitSpaces( &list, lineText.substr( listStart, listEnd ) );
+					VolumeCount = ParseHexInt( list[2] );
+					continue;
+				}
+
 				if( lineText[lineText.size( ) - 1] != '(' )
 					continue;
 
-				int listType = ParseInt( lineText.substr( 1, lineText.find( ' ' ) ) );
 				switch( listType )
 				{
 				case(10) :

@@ -6,7 +6,7 @@
 #include "../../QuickData.Unity/ThreadPool.h"
 
 
-void chunk_mesh_mt( gpu_triangle_array mesh, cpu_chunk_array * bounded_chunks )
+void chunk_mesh_mt( const gpu_triangle_array & mesh, cpu_chunk_array * bounded_chunks )
 {
 	auto & chunks = *bounded_chunks;
 	std::atomic_size_t numProcessed = 0;
@@ -14,23 +14,27 @@ void chunk_mesh_mt( gpu_triangle_array mesh, cpu_chunk_array * bounded_chunks )
 	
 	//	BROKEN: Vector not thread-safe
 
+	//	But is that really the problem? The write-targets are exclusive to each thread...
 	auto kernel = [mesh, &numProcessed, &numJoined]( mesh_chunk & chunk )
 	{
 		auto & bounds = chunk.bounds;
 
 		auto meshData = mesh.data( );
 
+		chunk.tris.resize( chunk.num_tris );
+
+		int chunkTriIndex = 0;
 		for( int i = 0; i < mesh.extent.size( ); i++ )
 		{
 			if( bounds.contains_point( meshData[i].center ) )
-				chunk.tris.push_back( meshData[i] );
+				chunk.tris[chunkTriIndex++] = meshData[i];
 			++numProcessed;
 		}
 
 		++numJoined;
 	};
 
-	ThreadPool pool( 4 );
+	ThreadPool pool( 16 );
 
 	std::atomic_size_t totalJobs = chunks.size( ) * static_cast<unsigned long long>(mesh.extent.size( ));
 
@@ -42,7 +46,7 @@ void chunk_mesh_mt( gpu_triangle_array mesh, cpu_chunk_array * bounded_chunks )
 	auto progressPoints = { 0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f, 1.1f, 1.2f, 1.3f };
 	while( numJoined < chunks.size( ) )
 	{
-		int currentCompleted = numProcessed;
+		std::size_t currentCompleted = numProcessed;
 		float currentCompletion = currentCompleted / (double)totalJobs;
 
 		Sleep( 10 );
@@ -59,7 +63,7 @@ void chunk_mesh_mt( gpu_triangle_array mesh, cpu_chunk_array * bounded_chunks )
 	std::cout << "Done." << std::endl;
 }
 
-void chunk_mesh( gpu_triangle_array mesh, cpu_chunk_array * out_chunks )
+void chunk_mesh( const gpu_triangle_array & mesh, cpu_chunk_array * out_chunks )
 {
 	//	TODO - should be multithreaded copy
 	auto & chunks = *out_chunks;
@@ -85,7 +89,7 @@ void chunk_mesh( gpu_triangle_array mesh, cpu_chunk_array * out_chunks )
 	}
 }
 
-void workflow_chunk_from_partitions( gpu_triangle_array * tris, gpu_partition_descriptor_array * partitions, gpu_index_array * tags, gpu_index_array * partitionSizes, cpu_chunk_array ** out_chunks )
+void workflow_chunk_from_partitions( gpu_triangle_array * tris, gpu_partition_descriptor_array * partitions, gpu_index_array * partitionSizes, cpu_chunk_array ** out_chunks )
 {
 	//	TODO - Could GPU parallelize (sort data by partition?)
 	auto & dev_mesh = *tris;

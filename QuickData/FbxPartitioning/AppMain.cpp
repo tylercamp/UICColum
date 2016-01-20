@@ -3,26 +3,11 @@
 
 #include <iostream>
 
-#include "Types.h"
-#include "Utilities.h"
-
-#include "Workflows/ImportFbxWorkflow.h"
-#include "Workflows/ImportMshWorkflow.h"
-#include "Workflows/ImportMshHeaderWorkflow.h"
-
-#include "Workflows/TriangulationWorkflow.h"
-#include "Workflows/NormalGenerationWorkflow.h"
-#include "Workflows/VolumeTaggingWorkflow.h"
-#include "Workflows/MeshRecenteringWorkflow.h"
-#include "Workflows/RenderWorkflow.h"
-#include "Workflows/AttachDataWorkflow.h"
-
-#include "Workflows/GatherMeshBoundsWorkflow.h"
-#include "Workflows/PartitioningWorkflow.h"
-#include "Workflows/MeshChunkingWorkflow.h"
-
-#include "Workflows/ChunkExportFbxWorkflow.h"
-#include "Workflows/ChunkExportBinaryWorkflow.h"
+//	App Logic
+#include "process_mesh.h"
+#include "process_volume_states.h"
+#include "process_voxels.h"
+#include "process_cs31.h"
 
 
 
@@ -35,14 +20,11 @@
 #pragma comment( lib, "SDL2.lib" )
 #pragma comment( lib, "opengl32.lib" )
 #pragma comment( lib, "glu32.lib" )
+#pragma comment( lib, "winmm.lib" ) // For PlaySound() on task complete
 
 
 
-//	Toggles
-#define PREVIEW_MESH
-
-
-
+#pragma comment( lib, "assimp.lib" )
 #pragma comment( lib, "libfbxsdk.lib" )
 
 #pragma warning( disable: 4018 ) // signed/unsigned mismatch
@@ -50,176 +32,103 @@
 #pragma warning( disable: 4267 ) // integer conversion warnings
 
 
-float_3 collection_center;
-bool should_generate_center = false;
-bool did_generate_center = false;
-
-enum ExportMode {
-	EXPORT_FBX,
-	EXPORT_BINARY
-};
 
 
 
 
-//	MAIN PROCESSING FUNCTIONS
 
-void generate_chunks( gpu_triangle_array * tris, cpu_chunk_array ** out_chunks )
+bool fileExists( const std::string & filename )
 {
-	float_3 min, max;
-	workflow_gather_mesh_bounds( tris, &min, &max );
-
-	gpu_index_array * tags;
-	gpu_index_array * partitionCounts;
-
-	gpu_partition_descriptor_array * partitions;
-	workflow_generate_partitions( tris, min, max, &partitions, &tags, &partitionCounts );
-	workflow_chunk_from_partitions( tris, partitions, tags, partitionCounts, out_chunks );
-
-	delete partitions;
-	delete tags, partitionCounts;
+	FILE * f = fopen( filename.c_str( ), "r" );
+	bool exists = (f != nullptr);
+	if( exists )
+		fclose( f );
+	return exists;
 }
 
-void process( const std::string & file, ExportMode exportMode, const std::vector<std::string> & dataFiles )
+void try_process_mesh( const std::string & filename, ExportMode exportMode )
 {
+	if( !fileExists( filename ) )
+		return;
+
+	process_mesh( filename, exportMode );
+}
+
+void process_mesh_set( const std::string & groupName, ExportMode exportMode )
+{
+	try_process_mesh( groupName + "Arteries.stl", exportMode );
+	try_process_mesh( groupName + "CSF.stl", exportMode );
+	try_process_mesh( groupName + "Gray.stl", exportMode );
+	try_process_mesh( groupName + "Scalp.stl", exportMode );
+	try_process_mesh( groupName + "Veins.stl", exportMode );
+	try_process_mesh( groupName + "White.stl", exportMode );
+}
+
+
+void debug_render_volume_output( const std::string & meshesPath, const std::string & volumeTimelineFile );
+
+//#ifdef _DEBUG
+int main( )
+//#else
+//int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow )
+//#endif
+{
+	//debug_render_volume_output( "msh-tetrahedral/FullCNSINJ_V1.GAMBIT/volumes/", "msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.binvolumes" );
+	//return 0;
+
+
 	auto start = clock( );
 
-	std::cout << "\n\n OPERATING ON " << file << std::endl;
-	
-	gpu_triangle_array * tris = nullptr, * volumeTris = nullptr;
+	auto jobList = {
+		"patients/bs/bs",
+		//"patients/ch/ch",
+		//"patients/ig/ig",
+		//"patients/kt/kt",
+		//"patients/mg/mg",
+		//"patients/nn/nn",
 
+		//"patients/MMPOST1_mc.stl",
+		//"patients/MMPost2_mc.stl",
 
+		//"IanArteries5.GAMBIT.msh",
 
-	/*** LOAD MESH DATA ***/
+		//"msh-tetrahedral/FullCNSINJ_V1.GAMBIT.msh",
+		//"msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.mm",
+	};
 
-	//	Determine loading method
-	std::string fileExt = getFileExtension( file );
-	if( fileExt == "fbx" )
+	for( auto job : jobList )
 	{
-		gpu_vertex_array * points;
-		gpu_index_array * indices;
-
-		workflow_import_fbx( file, &points, &indices );
-		workflow_gen_tris( points, indices, &tris );
-		workflow_gen_normals( tris );
-
-		delete points;
-		delete indices;
-	}
-	else if( fileExt == "msh" )
-	{
-		gpu_vertex_array * volumeData = nullptr;
-
-		gpu_vertex_array * points;
-		gpu_index_array * surfaceIndices, * volumeIndices, * volumeTags;
-
-		workflow_import_msh( file, &points, &surfaceIndices, &volumeIndices, &volumeTags );
-		int x = surfaceIndices->data()[0];
-		int y = volumeIndices->data( )[0];
-		workflow_gen_tris( points, surfaceIndices, &tris );
-		workflow_gen_tris( points, volumeIndices, &volumeTris );
-		workflow_gen_normals( tris );
-		workflow_gen_normals( volumeTris );
-		workflow_tag_mesh_volumes( volumeTris, volumeTags );
-		
-		if( volumeData )
-			delete volumeData;
-		delete points;
-		delete surfaceIndices, volumeIndices;
-	}
-	else
-		NOT_YET_IMPLEMENTED( );
-
-	//workflow_render_mesh( tris );
-	//if( volumeTris ) workflow_render_mesh( volumeTris );
-
-
-
-	/*** RECENTER MESHES and ATTACH DATA FILES ***/
-
-	if( should_generate_center )
-	{
-		if( !did_generate_center ) {
-			collection_center = workflow_get_mesh_center( tris );
-			did_generate_center = true;
-		}
-
-		workflow_recenter_mesh( tris, collection_center );
-		if( volumeTris ) workflow_recenter_mesh( volumeTris, collection_center );
-	}
-
-	for( int i = 0; i < dataFiles.size( ); i++ )
-	{
-		auto & filePath = dataFiles[i];
-		std::string fileExt = getFileExtension( filePath );
-
-		//	Only supporting MSH Header .mm files
-		if( fileExt == "mm" )
-		{
-			std::cout << "Loading supplemental data file " << filePath << "... ";
-			gpu_data_array * data;
-			workflow_import_msh_header( filePath, &data );
-			workflow_attach_data_to_mesh( volumeTris, data, i, 1 ); // MSH volumes are 1-indexed
-			delete data;
-			std::cout << "Done." << std::endl;
-		}
-		else
-			NOT_YET_IMPLEMENTED( );
+		auto type = getFileExtension( job );
+		if( type == "" )
+			process_mesh_set( job, EXPORT_BINARY );
+		if( type == "stl" )
+			process_mesh( job, EXPORT_BINARY );
+		if( type == "mm" )
+			process_volume_states( job );
+		if( type == "msh" )
+			process_mesh( job, EXPORT_BINARY );
 	}
 
 
+	auto end = clock( );
 
-	/*** PARTITION DATA ***/
+	std::cout << "\n\nTOTAL OPERATION TOOK: ~" << (end - start) / 1000 << "s" << std::endl;
 
-	cpu_chunk_array * chunks, * volumeChunks = nullptr;
-	std::cout << "Processing surface data" << std::endl;
-	generate_chunks( tris, &chunks );
-	std::cout << "Processing surface data DONE" << std::endl;
-	if( volumeTris )
-	{
-		std::cout << "Processing volume data" << std::endl;
-		generate_chunks( volumeTris, &volumeChunks );
-		std::cout << "Processing volume data DONE" << std::endl;
-	}
+	PlaySound( TEXT( "SystemStart" ), nullptr, SND_ALIAS );
+	SetForegroundWindow( GetConsoleWindow( ) );
 
-	//workflow_render_mesh( chunks );
-
-
-
-	/*** SAVE TO DISK ***/
-
-	CreateDirectoryA( getFileName( file ).c_str( ), nullptr );
-
-	typedef void( *ChunkExportWorkflow )(const std::string &, cpu_chunk_array *, int);
-	//	Strategy pattern
-	ChunkExportWorkflow exportWorkflow = nullptr;
-	switch( exportMode )
-	{
-	case(EXPORT_FBX) :
-		exportWorkflow = workflow_chunk_export_fbx;
-		break;
-	case(EXPORT_BINARY) :
-		exportWorkflow = workflow_chunk_export_binary;
-		break;
-	}
-
-	exportWorkflow( getFileName( file ) + "/surfaces", chunks, 0 );
-	if( volumeChunks ) exportWorkflow( getFileName( file ) + "/volumes", volumeChunks, dataFiles.size( ) );
-
-
-
-	/*** CLEANUP ***/
-	
-	delete tris;
-	if( volumeTris )
-		delete volumeTris;
-	delete chunks;
-	if( volumeChunks )
-		delete volumeChunks;
-
-	std::cout << "\nDONE" << std::endl;
-	std::cout << "Total operation took " << formatTime( clock( ) - start ) << std::endl;
+	pause( );
+	return 0;
 }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -228,13 +137,11 @@ void debug_render_output( const std::string & targetPath )
 	cpu_chunk_array chunks;
 
 	WIN32_FIND_DATAA ffd;
-	LARGE_INTEGER filesize;
-	size_t length_of_arg;
 	HANDLE hFind = INVALID_HANDLE_VALUE;
 	DWORD dwError = 0;
 
 	std::string inputPath( targetPath );
-	if( inputPath.back( ) != '\\' && inputPath.back( ) != '/' )
+	if( inputPath.back( ) != '\\' && inputPath.back( ) != '\\' )
 		inputPath += '\\';
 	inputPath += "*.binmesh";
 
@@ -272,10 +179,6 @@ void debug_render_output( const std::string & targetPath )
 				__debugbreak( );
 #endif
 			chunks.emplace_back( std::move( chunk ) );
-
-			filesize.LowPart = ffd.nFileSizeLow;
-			filesize.HighPart = ffd.nFileSizeHigh;
-			printf( "  %s   %l bytes\n", ffd.cFileName, filesize.QuadPart );
 		}
 	} while( FindNextFileA( hFind, &ffd ) != 0 );
 
@@ -290,32 +193,81 @@ void debug_render_output( const std::string & targetPath )
 
 
 
-//#ifdef _DEBUG
-int main( )
-//#else
-//int WINAPI WinMain( HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow )
-//#endif
+void debug_render_volume_output( const std::string & meshesPath, const std::string & volumeTimelineFile )
 {
-	//debug_render_output( "IanArteries5.GAMBIT/surfaces/" );
+	cpu_chunk_array chunks;
+
+	WIN32_FIND_DATAA ffd;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	DWORD dwError = 0;
+
+	std::string inputPath( meshesPath );
+	if( inputPath.back( ) != '\\' && inputPath.back( ) != '/' )
+		inputPath += '\\';
+	inputPath += "*.binmesh";
 
 
+	hFind = FindFirstFileA( inputPath.c_str( ), &ffd );
 
-	auto start = clock( );
+	//ASSERT( INVALID_HANDLE_VALUE != hFind );
 
-	//process( "bsArteries.fbx", EXPORT_BINARY );
-	//process( "bsCSF.fbx", EXPORT_BINARY );
-	//process( "bsGray.fbx", EXPORT_BINARY );
-	//process( "bsSkull.fbx", EXPORT_BINARY );
-	//process( "bsVeins.fbx", EXPORT_BINARY );
-	//process( "bsWhite.fbx", EXPORT_BINARY );
+	// List all the files in the directory with some info about them.
 
-	process( "IanArteries5.GAMBIT.msh", EXPORT_BINARY, { "IanArteries5-1.mm" } );
-	//process( "IanArteries5.GAMBIT.msh", EXPORT_BINARY );
+	do
+	{
+		if( !(ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
+		{
+			std::string foundPath = std::string( meshesPath ) + ffd.cFileName;
+			BinaryMesh mesh( foundPath );
+			mesh_chunk chunk;
+			chunk.num_tris = mesh.numTris;
+			chunk.tris.resize( chunk.num_tris );
+			for( int i = 0; i < chunk.num_tris; i++ )
+			{
+				auto & tri = chunk.tris[i];
+				tri.a = mesh.vertices[i * 3 + 0];
+				tri.b = mesh.vertices[i * 3 + 1];
+				tri.c = mesh.vertices[i * 3 + 2];
 
-	auto end = clock( );
+				tri.norm_a = mesh.normals[i * 3 + 0];
+				tri.norm_b = mesh.normals[i * 3 + 1];
+				tri.norm_c = mesh.normals[i * 3 + 2];
 
-	std::cout << "\n\nTOTAL OPERATION TOOK: " << ( end - start ) / 1000 << "s" << std::endl;
+				tri.volumeIndex = mesh.volumes[i * 3 + 0];
+				tri.volumeIndex = mesh.volumes[i * 3 + 1];
+				tri.volumeIndex = mesh.volumes[i * 3 + 2];
+			}
 
-	pause( );
-	return 0;
+#ifdef _DEBUG
+			if( mesh.numTris < 0 )
+				__debugbreak( );
+#endif
+			chunks.emplace_back( std::move( chunk ) );
+		}
+	} while( FindNextFileA( hFind, &ffd ) != 0 );
+
+	dwError = GetLastError( );
+	if( dwError != ERROR_NO_MORE_FILES )
+		return;
+
+	FindClose( hFind );
+
+	
+	
+	VolumeMeshTimeline timeline;
+	timeline.LoadFrom( volumeTimelineFile );
+	cpu_data_sequence_array sequence;
+	for( auto state : timeline.states )
+	{
+		//	Only 1-dimensional data for now, need to confirm import support for vector data
+		ASSERT( state->numDimensions == 1 );
+
+		auto cpuState = new cpu_data_array( );
+		cpuState->assign( state->dataStore, state->dataStore + state->numDimensions * state->numVolumes );
+		sequence.push_back( cpuState );
+	}
+	
+	
+	workflow_render_volume_mesh( &chunks, &sequence );
 }
+

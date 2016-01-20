@@ -92,20 +92,25 @@ std::string formatTime( long ms )
 	return result.str( );
 }
 
-std::string getFileName( const std::string & filepath )
+std::string getStoragePath( const std::string & referencePath )
 {
-	std::string fpath = filepath;
+	std::string fpath = referencePath;
 	while( fpath.find( '\\' ) != fpath.npos )
 		fpath = fpath.replace( fpath.find( '\\' ), 1, "/" );
 
-	int extPos = filepath.find_last_of( '.' );
-	int startPos = filepath.find_last_of( '/' );
-	if( startPos < 0 )
-		startPos = 0;
+	int extPos = referencePath.find_last_of( '.' );
 	if( extPos < 0 )
 		extPos = fpath.size( );
 
-	return fpath.substr( startPos, extPos - startPos );
+	return fpath.substr( 0, extPos );
+}
+
+std::string toLower( const std::string & s )
+{
+	std::string result;
+	for( int i = 0; i < s.size( ); i++ )
+		result += tolower( s[i] );
+	return result;
 }
 
 std::string getFileExtension( const std::string & filepath )
@@ -121,6 +126,26 @@ std::string getFileExtension( const std::string & filepath )
 	return filepath.substr( extPos + 1 );
 }
 
+std::string removeWhitespace( const std::string & s )
+{
+	std::string result;
+
+	for( int i = 0; i < s.size( ); i++ )
+	{
+		char c = s[i];
+		if( c == ' ' || c == '\n' || c == '\r' || c == '\t' )
+			continue;
+
+		result += c;
+	}
+	return result;
+}
+
+bool contains( const std::string & str, const std::string & text )
+{
+	return str.find( text, 0 ) != str.npos;
+}
+
 void pause( )
 {
 	std::string str;
@@ -134,4 +159,24 @@ float_3 cross( float_3 a, float_3 b ) restrict( amp )
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x
 		);
+}
+
+float dot( float_3 a, float_3 b ) restrict( amp )
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+float mag2( float_3 v ) restrict( amp )
+{
+	return dot( v, v );
+}
+
+float_3 mag( float_3 v ) restrict( amp )
+{
+	return concurrency::fast_math::sqrtf( mag2( v ) );
+}
+
+float_3 norm( float_3 v ) restrict( amp )
+{
+	return v / mag( v );
 }

@@ -34,7 +34,6 @@ struct MeshDataset
 	std::vector<ParsedMeshStructure *> meshes;
 };
 
-ParsedMeshStructure * LoadFbxMesh( const char * targetPath );
 ParsedMeshStructure * LoadBinaryMesh( const char * targetPath );
 
 UNITY_NATIVE_EXPORT bool LoadMeshSet( const char * searchPath, const char * searchString );
