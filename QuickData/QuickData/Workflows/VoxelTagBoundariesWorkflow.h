@@ -96,10 +96,8 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 
 		auto & current_chunk_tris = *chunked_mesh_tris[i];
 		int maxVoxelsPerIteration = 16;
-		int maxTrisPerIteration = 20000;
 
 		int numVoxelIterations = current_work_extent[0] / maxVoxelsPerIteration;
-		int numTriIterations = current_work_extent[1] / maxTrisPerIteration;
 
 		//	TODO - OPTIMIZE FOR TILED USE
 
@@ -108,48 +106,44 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 		{
 			auto divided_work_extent( current_work_extent );
 			divided_work_extent[0] = min( maxVoxelsPerIteration, current_work_extent[0] - s_voxel * maxVoxelsPerIteration );
-			for( int s_tri = 0; s_tri < numTriIterations; s_tri++ )
+
+			auto voxelsStart = dev_chunk_voxel_start[i];
+
+			int voxelsOffset = s_voxel * maxVoxelsPerIteration;
+
+			parallel_for_each(
+				divided_work_extent,
+				[=]( index<2> idx ) restrict( amp )
 			{
-				divided_work_extent[1] = min( maxTrisPerIteration, current_work_extent[1] - s_tri * maxTrisPerIteration );
+				int voxel_flat_index = idx[0] + voxelsOffset;
+				int tri_index = idx[1];
 
-				auto voxelsStart = dev_chunk_voxel_start[i];
+				int_3 voxel_index;
 
-				int voxelsOffset = s_voxel * maxVoxelsPerIteration;
-				int trisOffset = s_tri * maxTrisPerIteration;
+				voxel_index.z = voxel_flat_index / ( current_chunk_range.x * current_chunk_range.y );
+				voxel_flat_index -= voxel_index.z * current_chunk_range.x * current_chunk_range.y;
+				voxel_index.y = voxel_flat_index / current_chunk_range.x;
+				voxel_flat_index -= voxel_index.y * current_chunk_range.x;
+				voxel_index.x = voxel_flat_index;
 
-				parallel_for_each(
-					divided_work_extent,
-					[=]( index<2> idx ) restrict( amp )
+				voxel_index += voxelsStart;
+
+				auto idx_voxel = index<3>( voxel_index.x, voxel_index.y, voxel_index.z );
+				voxel v = voxels[idx_voxel];
+				triangle tri = current_chunk_tris[tri_index];
+
+				auto center = tri.center;
+				if( v.contains_point( center ) )
 				{
-					int voxel_flat_index = idx[0] + voxelsOffset;
-					int tri_index = idx[1] + trisOffset;
+					auto & tagData = voxel_tag_data[idx_voxel];
+					concurrency::atomic_fetch_inc( &tagData );
+				}
+			} );
 
-					int_3 voxel_index;
+			//voxel_tag_data.source_accelerator_view.;
 
-					voxel_index.z = voxel_flat_index / ( current_chunk_range.x * current_chunk_range.y );
-					voxel_flat_index -= voxel_index.z * current_chunk_range.x * current_chunk_range.y;
-					voxel_index.y = voxel_flat_index / current_chunk_range.x;
-					voxel_flat_index -= voxel_index.y * current_chunk_range.x;
-					voxel_index.x = voxel_flat_index;
-
-					voxel_index += voxelsStart;
-
-					auto idx_voxel = index<3>( voxel_index.x, voxel_index.y, voxel_index.z );
-					voxel v = voxels[idx_voxel];
-					triangle tri = current_chunk_tris[tri_index];
-
-					auto center = tri.center;
-					if( v.contains_point( center ) )
-					{
-						auto & tagData = voxel_tag_data[idx_voxel];
-						concurrency::atomic_fetch_inc( &tagData );
-					}
-				} );
-
-				//voxel_tag_data.source_accelerator_view.;
-
-				concurrency::accelerator( concurrency::accelerator::default_accelerator ).default_view.flush( );
-			}
+			concurrency::accelerator( concurrency::accelerator::default_accelerator ).default_view.flush( );
+			
 		}
 
 		//if( i % ( chunked_mesh->size( ) / 15 ) == 0 )
