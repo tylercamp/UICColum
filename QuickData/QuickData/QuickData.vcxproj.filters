@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="AppMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="process_cs31.h" />
+    <ClInclude Include="process_volume_states.h" />
+    <ClInclude Include="process_voxels.h" />
+    <ClInclude Include="process_mesh.h" />
+    <ClInclude Include="Workflows\RenderWorkflow.h">
+      <Filter>Workflows</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadPool.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Types.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="VolumeMeshState.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="VolumeMeshTimeline.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="BinaryMesh.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="MshHeaderReader.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="MshReader.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="_FileFormat.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\ChunkExportBinaryWorkflow.h">
+      <Filter>Workflows\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\ImportAssimpWorkflow.h">
+      <Filter>Workflows\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\ImportBinaryMeshWorkflow.h">
+      <Filter>Workflows\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\ImportMshHeaderWorkflow.h">
+      <Filter>Workflows\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\ImportMshWorkflow.h">
+      <Filter>Workflows\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshPartitionScheme.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\PartitionSchemeExportWorkflow.h">
+      <Filter>Workflows\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VolumeDataExportWorkflow.h">
+      <Filter>Workflows\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VolumeStateExportWorkflow.h">
+      <Filter>Workflows\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VoxelFillRegionsWorklow.h">
+      <Filter>Workflows</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VoxelTagBoundariesWorkflow.h">
+      <Filter>Workflows</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\GatherMeshBoundsWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\MeshChunkingWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\MeshRecenteringWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\NormalGenerationWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\PartitioningWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\SmoothNormalsWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\TriangulationWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VolumeNormalGenerationWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VolumeTaggingWorkflow.h">
+      <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Utility">
+      <UniqueIdentifier>{1ca78639-b84b-47d6-81f3-06ed39241f85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Workflows">
+      <UniqueIdentifier>{e6fddaba-97a8-4b62-a680-d0c7f57e9b0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Model">
+      <UniqueIdentifier>{2317c7ea-0b5f-40a0-9776-e54bb6cf3e9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Workflows\Import">
+      <UniqueIdentifier>{27d6254d-14a3-4978-9080-320164ebf495}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Workflows\Export">
+      <UniqueIdentifier>{bfd7adab-1c49-448c-bd78-c6333a9b884b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Workflows\Mesh">
+      <UniqueIdentifier>{c9844684-a278-4ec6-bcd9-0067d320e645}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -6,8 +6,8 @@
 #include <iostream>
 #include "QuickData.Unity.h"
 
-#include "../FbxPartitioning/BinaryMesh.h"
-#include "../FbxPartitioning/VolumeMeshTimeline.h"
+#include "../QuickData/BinaryMesh.h"
+#include "../QuickData/VolumeMeshTimeline.h"
 
 #pragma comment( lib, "libfbxsdk.lib" )
 
