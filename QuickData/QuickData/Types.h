@@ -21,6 +21,7 @@ using concurrency::extent;
 using concurrency::parallel_for_each;
 using concurrency::array_view;
 using concurrency::graphics::float_3;
+using concurrency::graphics::int_3;
 
 using std::unique_ptr;
 using std::weak_ptr;
@@ -54,6 +55,7 @@ struct triangle
 	//	Index of the volume associated with this triangle. If there is no volume associated, this is -1.
 	int volumeIndex;
 
+	triangle( ) restrict( amp ) { }
 
 	triangle( ) : volumeIndex( -1 )
 	{
