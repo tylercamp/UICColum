@@ -13,7 +13,7 @@ inline l max( l left, r right )
 }
 
 template <typename l, typename r>
-inline l min( l left, r right )
+inline l min( l left, r right ) restrict( cpu, amp )
 {
 	return left < right ? left : right;
 }
@@ -90,6 +90,20 @@ std::string formatTime( long ms )
 	std::ostringstream result;
 	result << ( count_spec / 100.0f ) << label;
 	return result.str( );
+}
+
+bool directoryExists( const std::string & path )
+{
+	auto cpath = path.back( ) == '/' || path.back( ) == '\\' ? path : path + '/';
+	FILE * testfile = fopen( ( cpath + "__testfile" ).c_str( ), "w" );
+
+	bool exists = ( testfile != nullptr );
+	if( testfile )
+		fclose( testfile );
+
+	DeleteFileA( (cpath + "__testfile").c_str( ) );
+
+	return exists;
 }
 
 std::string getStoragePath( const std::string & referencePath )
