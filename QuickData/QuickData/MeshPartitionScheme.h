@@ -21,7 +21,7 @@ public:
 
 	void LoadFrom( const std::string & filename )
 	{
-		FILE * file = fopen( filename.c_str( ), "r" );
+		FILE * file = fopen( filename.c_str( ), "rb" );
 
 		int headerTag;
 		fread( &headerTag, sizeof( int ), 1, file );
@@ -31,30 +31,50 @@ public:
 		int numChunks;
 		fread( &numChunks, sizeof( int ), 1, file );
 
+		std::vector<float_3> floats;
+		floats.resize( numChunks * 2 );
+
+		fread( floats.data( ), sizeof( float_3 ), numChunks * 2, file );
+
 		for( int i = 0; i < numChunks; i++ )
 		{
 			mesh_partition_descriptor desc;
-			fread( &desc.bounds_start, sizeof( float ) * 3, 1, file );
-			fread( &desc.bounds_end, sizeof( float ) * 3, 1, file );
+
+			desc.bounds_start = floats[i * 2];
+			desc.bounds_end = floats[i * 2 + 1];
+
+		#ifdef _DEBUG
+			if( desc.bounds_end == float_3( 0.0 ) || desc.bounds_start == float_3( 0.0 ) ) // Uninitialized bounds
+				NOT_YET_IMPLEMENTED( );
+		#endif
+
 			descriptors.emplace_back( std::move( desc ) );
 		}
+
+		//delete[] buffer;
 
 		fclose( file );
 	}
 
 	void SaveTo( const std::string & filename )
 	{
-		FILE * file = fopen( filename.c_str( ), "w" );
+		FILE * file = fopen( filename.c_str( ), "wb" );
 		fwrite( &PARTITION_FILE_START_TAG, sizeof( int ), 1, file );
 		int numChunks = descriptors.size( );
 		fwrite( &numChunks, sizeof( int ), 1, file );
 
+		float_3 * output_buffer = new float_3[numChunks * 2];
+
 		for( int i = 0; i < numChunks; i++ )
 		{
 			auto & desc = descriptors[i];
-			fwrite( &desc.bounds_start, sizeof( float ) * 3, 1, file );
-			fwrite( &desc.bounds_end, sizeof( float ) * 3, 1, file );
+
+			output_buffer[i * 2] = desc.bounds_start;
+			output_buffer[i * 2 + 1] = desc.bounds_end;
 		}
+
+		fwrite( output_buffer, sizeof( float_3 ), numChunks * 2, file );
+		delete output_buffer;
 
 		fclose( file );
 	}

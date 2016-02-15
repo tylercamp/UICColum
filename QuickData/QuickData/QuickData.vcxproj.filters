@@ -62,9 +62,6 @@
     <ClInclude Include="Workflows\VolumeDataExportWorkflow.h">
       <Filter>Workflows\Export</Filter>
     </ClInclude>
-    <ClInclude Include="Workflows\VolumeStateExportWorkflow.h">
-      <Filter>Workflows\Export</Filter>
-    </ClInclude>
     <ClInclude Include="Workflows\VoxelFillRegionsWorklow.h">
       <Filter>Workflows</Filter>
     </ClInclude>
@@ -97,6 +94,15 @@
     </ClInclude>
     <ClInclude Include="Workflows\VolumeTaggingWorkflow.h">
       <Filter>Workflows\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="BinaryVoxelMatrix.h">
+      <Filter>Model</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VoxelMatrixDataExportWorkflow.h">
+      <Filter>Workflows\Export</Filter>
+    </ClInclude>
+    <ClInclude Include="Workflows\VoxelTagBoundariesWorkflowRef.h">
+      <Filter>Workflows</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -39,7 +39,7 @@
 
 bool fileExists( const std::string & filename )
 {
-	FILE * f = fopen( filename.c_str( ), "r" );
+	FILE * f = fopen( filename.c_str( ), "rb" );
 	bool exists = (f != nullptr);
 	if( exists )
 		fclose( f );
@@ -73,7 +73,10 @@ void process_mesh_set( const std::string & groupName, ExportMode exportMode, boo
 void debug_render_volume_output( const std::string & meshesPath, const std::string & volumeTimelineFile );
 
 #include "Workflows\VoxelTagBoundariesWorkflow.h"
+#include "Workflows\VoxelTagBoundariesWorkflowRef.h"
+
 #include "Workflows\ImportBinaryMeshWorkflow.h"
+#include "Workflows\VoxelMatrixDataExportWorkflow.h"
 
 //#ifdef _DEBUG
 int main( int argc, char * argv[] )
@@ -83,67 +86,110 @@ int main( int argc, char * argv[] )
 {
 	//debug_render_volume_output( "msh-tetrahedral/FullCNSINJ_V1.GAMBIT/volumes/", "msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.binvolumes" );
 	//return 0;
-
 	
+	/*
+	{
+		BinaryVoxelMatrix m( "voxeloutput/Arteries_CSF_Gray_Veins_White_400.binmatrix" );
+		//BinaryVoxelMatrix m( "voxeloutput/Arteries_Gray_White_400.binmatrix" );
+		voxel_matrix vm( 400, 400, 400, float_3( -20.0 ), float_3( 190.0 ) );
+		vm.dev_voxel_data = new gpu_voxel_data( vm.width, vm.height, vm.depth, m.voxel_data[0] );
+
+		run_window( vm );
+
+		return 0;
+	}
+	*/
+	
+	
+	
+
+
+
 	//std::string prefix = "C:/Users/algor/Desktop/UIC/";
 	std::string prefix = "";
 
-	auto meshes = {
-		"patients/bs/bsArteries/surfaces/",
+	std::vector<std::string> meshes = {
+		//"patients/bs/bsArteries/surfaces/",
 		//"patients/bs/bsCSF/surfaces/",
-		//"patients/bs/bsGray/surfaces/",
-		//"patients/bs/bsScalp/surfaces/",
+		"patients/bs/bsGray/surfaces/",
 		//"patients/bs/bsVeins/surfaces/",
 		//"patients/bs/bsWhite/surfaces/"
 	};
 
+	std::string outputPath = "voxeloutput/";
+	if( !directoryExists( outputPath ) )
+		CreateDirectoryA( outputPath.c_str( ), nullptr );
+
+	std::vector<std::string> meshNames = {
+		//"Arteries",
+		//"CSF",
+		"Gray",
+		//"Veins",
+		//"White"
+	};
+
+	
+
+	int res = 512;
+	auto startA = clock( );
+	std::cout << "Generating matrix...";
+	voxel_matrix vm( res, res, res, float_3( -20.0f ), float_3( 190.0f ) );
+	std::cout << "done. Took " << ( clock( ) - startA ) << "ms" << std::endl;
+
 	auto allstart = clock( );
-	for( auto meshpath : meshes )
+	for( int i = 0; i < meshes.size( ); i++ )
 	{
+		auto meshpath = meshes[i];
+
 		std::cout << "Processing " << meshpath << std::endl;
 		cpu_chunk_array * mesh_chunks;
 		workflow_import_binary_mesh_set( prefix + meshpath, &mesh_chunks );
 
-		int res = 512;
-
-		auto startA = clock( );
-		std::cout << "Generating matrix...";
-		voxel_matrix vm( res, res, res, float_3( -20.0 ), float_3( 190.0 ) );
-		std::cout << "done. Took " << ( clock( ) - startA ) << "ms" << std::endl;
-
 		std::cout << "Generating tag data for matrix " << res << "x" << res << "x" << res << "..." << std::endl;
 		startA = clock( );
-		workflow_tag_voxels_with_mesh_boundary( &vm, mesh_chunks );
+		//workflow_tag_voxels_with_mesh_boundary( &vm, mesh_chunks );
+		workflow_tag_voxels_with_mesh_boundary_ref( &vm, mesh_chunks );
 		//vm.generate_test_data( );
 		std::cout << "Done. Took " << ( clock( ) - startA ) / 1000.0f << "s" << std::endl;
 
-		
+
 		int maxTags = 0;
 		for( int x = 0; x < vm.width; x++ )
 			for( int y = 0; y < vm.height; y++ )
 				for( int z = 0; z < vm.depth; z++ )
-					maxTags = max( maxTags, vm.dev_voxel_tag_data[0]->operator()( x, y, z ) );
+					maxTags = max( maxTags, vm.dev_voxel_tag_data[i]->operator()( x, y, z ) );
 
 		std::cout << "max(tags) = " << maxTags << std::endl;
 
-
+		//	Generate data 
 		{
 			gpu_voxel_data & voxel_data = *( new gpu_voxel_data( vm.dev_voxels->extent ) );
-			auto & tags = *( vm.dev_voxel_tag_data[0] );
+			auto & tags = *( vm.dev_voxel_tag_data[i] );
 
 			for( int x = 0; x < vm.width; x++ )
 				for( int y = 0; y < vm.height; y++ )
 					for( int z = 0; z < vm.depth; z++ )
-						voxel_data( x, y, z ) = tags( x, y, z ) / (double) maxTags;
+						voxel_data( x, y, z ) = sqrtf( tags( x, y, z ) / (double) maxTags ) * 0.3f;
 
 			vm.dev_voxel_data = &voxel_data;
 		}
-		
+
 
 		run_window( vm );
 
+		delete vm.dev_voxel_data;
+		vm.dev_voxel_data = nullptr;
+
+
+		//	Cleanup
 		delete mesh_chunks;
 	}
+
+	std::string all_meshes;
+	for( auto names : meshNames )
+		all_meshes += names + "_";
+
+	workflow_export_voxel_matrix_data( outputPath + all_meshes + toString( res ) + ".binmatrix", &vm );
 
 	std::cout << "Took " << ( clock( ) - allstart ) / 1000.0f << "s" << std::endl;
 

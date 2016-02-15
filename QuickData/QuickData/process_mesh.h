@@ -155,9 +155,11 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 	workflow_chunk_export_binary( getStoragePath( file ) + "/surfaces", chunks );
 	if( volumeChunks ) workflow_chunk_export_binary( getStoragePath( file ) + "/volumes", volumeChunks );
 
+	/*
 	std::string partitionSchemeFile = "partitions.binmeshscheme";
 	workflow_export_partition_scheme( getStoragePath( file ) + "/surfaces/" + partitionSchemeFile, chunks );
 	if( volumeChunks ) workflow_export_partition_scheme( getStoragePath( file ) + "/volumes/" + partitionSchemeFile, volumeChunks );
+	*/
 
 
 

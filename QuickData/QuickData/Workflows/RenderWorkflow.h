@@ -458,13 +458,23 @@ void run_window( const voxel_matrix & vm )
 		NOT_YET_IMPLEMENTED( );
 
 	int width = 1680;
-	int height = 1050;
+	int height = 900;
 
 #ifdef PREVIEW_MESH_HIDPI
 	SetProcessDPIAware( );
 	width *= 1.85;
 	height *= 1.85;
 #endif
+
+	std::vector<float_3> idColors = {
+		float_3( 1.0f, 0.0f, 0.0f ),
+		float_3( 0.0f, 1.0f, 0.0f ),
+		float_3( 0.0f, 0.0f, 1.0f ),
+		float_3( 1.0f, 1.0f, 0.0f ),
+		float_3( 0.0f, 1.0f, 1.0f ),
+		float_3( 0.0f ),
+		float_3( 0.0f )
+	};
 
 	int numVoxels = vm.width * vm.height * vm.depth;
 
@@ -489,13 +499,13 @@ void run_window( const voxel_matrix & vm )
 	glMatrixMode( GL_PROJECTION );
 	gluPerspective( 90.0, 1920.0 / 1080.0, 1.0, 1000.0 );
 
-	bool useMIP = false;
+	bool useMIP = false; // Otherwise additive
 
 	glDisable( GL_DEPTH_TEST );
 	glDisable( GL_CULL_FACE );
 	glEnable( GL_BLEND );
 
-	if( useMIP )
+	if( true )
 	{
 		auto glBlendEquation = ( void( *)( GLenum ) )wglGetProcAddress( "glBlendEquation" );
 		const GLenum GL_MAX = 0x8008;
@@ -506,10 +516,10 @@ void run_window( const voxel_matrix & vm )
 
 	//glBlendFunc( GL_ONE, GL_ONE );
 
-	//glBlendFunc( GL_SRC_ALPHA, GL_ONE );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE );
 	glBlendFunc( GL_ONE, GL_ONE );
 
-	float ox = 0.0f, oy = 0.0f, oz = 0.0f;
+	float ox = 100.0f, oy = 100.0f, oz = 170.0f;
 	float ry = 0.0f;
 
 	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
@@ -538,6 +548,11 @@ void run_window( const voxel_matrix & vm )
 				{
 					auto & voxel = (*vm.dev_voxels)( x, y, z );
 					auto & value = (*vm.dev_voxel_data )( x, y, z );
+					int tagId = floorf( value );
+					if( tagId == -1 ) continue;
+					auto & color = idColors[tagId];
+					float membership = value - tagId;
+					//glColor3f( color.r * membership, color.g * membership, color.b * membership );
 					draw_voxel( voxel, value );
 				}
 
@@ -558,6 +573,8 @@ void run_window( const voxel_matrix & vm )
 		if( GetAsyncKeyState( 'S' ) ) oz += spd;
 		if( GetAsyncKeyState( 'Z' ) ) oy -= spd;
 		if( GetAsyncKeyState( 'X' ) ) oy += spd;
+
+		std::cout << ox << ",\t" << oy << ",\t" << oz << "\n";
 
 		auto time = clock( ) - start;
 

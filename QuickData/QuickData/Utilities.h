@@ -1,5 +1,7 @@
 #pragma once
 
+#include <amp_graphics.h>
+
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -7,15 +9,57 @@
 /* Utility functions */
 
 template <typename l, typename r>
-inline l max( l left, r right )
+inline l max( l left, r right ) restrict( cpu, amp )
 {
 	return left > right ? left : right;
+}
+
+using concurrency::graphics::float_3;
+template <>
+inline float_3 max<float_3, float_3>( float_3 left, float_3 right ) restrict( cpu, amp )
+{
+	return float_3(
+		max( left.x, right.x ),
+		max( left.y, right.y ),
+		max( left.z, right.z )
+	);
+}
+
+using concurrency::graphics::int_3;
+template <>
+inline int_3 max<int_3, int_3>( int_3 left, int_3 right ) restrict( cpu, amp )
+{
+	return int_3(
+		max( left.x, right.x ),
+		max( left.y, right.y ),
+		max( left.z, right.z )
+		);
 }
 
 template <typename l, typename r>
 inline l min( l left, r right ) restrict( cpu, amp )
 {
 	return left < right ? left : right;
+}
+
+template <>
+inline float_3 min<float_3, float_3>( float_3 left, float_3 right ) restrict( cpu, amp )
+{
+	return float_3(
+		min( left.x, right.x ),
+		min( left.y, right.y ),
+		min( left.z, right.z )
+		);
+}
+
+template <>
+inline int_3 min<int_3, int_3>( int_3 left, int_3 right ) restrict( cpu, amp )
+{
+	return int_3(
+		min( left.x, right.x ),
+		min( left.y, right.y ),
+		min( left.z, right.z )
+		);
 }
 
 std::string formatDataSize( long long numBytes )
@@ -155,6 +199,14 @@ std::string getFileName( const std::string & filepath )
 		fpath = fpath.substr( 0, extPos );
 
 	return fpath;
+}
+
+template <typename T>
+std::string toString( const T & v )
+{
+	std::ostringstream os;
+	os << v;
+	return os.str( );
 }
 
 std::string removeWhitespace( const std::string & s )

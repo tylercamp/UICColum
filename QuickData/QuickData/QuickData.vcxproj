@@ -164,7 +164,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BinaryMesh.h" />
+    <ClInclude Include="BinaryVoxelMatrix.h" />
     <ClInclude Include="MeshPartitionScheme.h" />
+    <ClInclude Include="Workflows\VoxelMatrixDataExportWorkflow.h" />
     <ClInclude Include="Workflows\PartitionSchemeExportWorkflow.h" />
     <ClInclude Include="Workflows\ImportBinaryMeshWorkflow.h" />
     <ClInclude Include="process_cs31.h" />
@@ -175,6 +177,7 @@
     <ClInclude Include="Workflows\SmoothNormalsWorkflow.h" />
     <ClInclude Include="Workflows\VolumeDataExportWorkflow.h" />
     <ClInclude Include="Workflows\VoxelTagBoundariesWorkflow.h" />
+    <ClInclude Include="Workflows\VoxelTagBoundariesWorkflowRef.h" />
     <ClInclude Include="_FileFormat.h" />
     <ClInclude Include="VolumeMeshTimeline.h" />
     <ClInclude Include="Workflows\ImportAssimpWorkflow.h" />
@@ -184,7 +187,6 @@
     <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="Utilities.h" />
     <ClInclude Include="Types.h" />
-    <ClInclude Include="Workflows\VolumeStateExportWorkflow.h" />
     <ClInclude Include="Workflows\ChunkExportBinaryWorkflow.h" />
     <ClInclude Include="Workflows\ImportMshHeaderWorkflow.h" />
     <ClInclude Include="Workflows\MeshChunkingWorkflow.h" />

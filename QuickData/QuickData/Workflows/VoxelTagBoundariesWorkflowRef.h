@@ -43,9 +43,14 @@ void workflow_tag_voxels_with_mesh_boundary_ref( voxel_matrix * voxelmatrix, cpu
 			overlap_start.x >= voxelstack_dims.x || overlap_start.y >= voxelstack_dims.y || overlap_start.z >= voxelstack_dims.z ||
 			overlap_end.x >= voxelstack_dims.x || overlap_end.y > voxelstack_dims.y || overlap_end.z > voxelstack_dims.z )
 		{
-			std::cout << "VOXEL MATRIX DIMS CANNOT CONTAIN MESH" << std::endl;
-			NOT_YET_IMPLEMENTED( );
+			std::cout << "(Warn) Voxel space does not contain entire mesh" << std::endl;
 		}
+
+		overlap_start = max( overlap_start, int_3( 0 ) );
+		overlap_end = min( overlap_end, voxelstack_dims - int_3( 1 ) );
+
+		if( overlap_start != int_3( 0 ) || overlap_end != voxelstack_dims - int_3( 1 ) )
+			std::cout << "Found data to tag!" << std::endl;
 
 		chunk_voxel_overlap_start.push_back( overlap_start );
 		chunk_voxel_overlap_end.push_back( overlap_end );
@@ -59,15 +64,18 @@ void workflow_tag_voxels_with_mesh_boundary_ref( voxel_matrix * voxelmatrix, cpu
 
 	for( int c = 0; c < chunked_mesh->size( ); c++ )
 	{
-		auto voxel_range = chunk_voxel_overlap_end[c] - chunk_voxel_overlap_start[c];
+		auto voxel_range = chunk_voxel_overlap_end[c] - chunk_voxel_overlap_start[c] + 1;
+		if( voxel_range == int_3( 0 ) )
+			continue;
+
 		const auto & current_chunk = chunked_mesh->at( c );
-		for( int x = 0; x < voxelmatrix->width; x++ )
+		for( int x = 0; x < voxel_range.x; x++ )
 		{
-			for( int y = 0; y < voxelmatrix->height; y++ )
+			for( int y = 0; y < voxel_range.y; y++ )
 			{
-				for( int z = 0; z < voxelmatrix->depth; z++ )
+				for( int z = 0; z < voxel_range.z; z++ )
 				{
-					auto voxelIndex = int_3( x, y, z );
+					auto voxelIndex = int_3( x, y, z ) + chunk_voxel_overlap_start[c];
 					//auto voxelIndex = chunk_voxel_overlap_start[c] + int_3( x, y, z );
 					auto idx_voxel = index<3>( voxelIndex.x, voxelIndex.y, voxelIndex.z );
 
