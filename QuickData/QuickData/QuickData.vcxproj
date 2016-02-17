@@ -177,6 +177,7 @@
     <ClInclude Include="Workflows\SmoothNormalsWorkflow.h" />
     <ClInclude Include="Workflows\VolumeDataExportWorkflow.h" />
     <ClInclude Include="Workflows\VoxelTagBoundariesWorkflow.h" />
+    <ClInclude Include="Workflows\VoxelTagBoundariesWorkflow2.h" />
     <ClInclude Include="Workflows\VoxelTagBoundariesWorkflowRef.h" />
     <ClInclude Include="_FileFormat.h" />
     <ClInclude Include="VolumeMeshTimeline.h" />

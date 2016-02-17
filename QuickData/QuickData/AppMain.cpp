@@ -73,6 +73,7 @@ void process_mesh_set( const std::string & groupName, ExportMode exportMode, boo
 void debug_render_volume_output( const std::string & meshesPath, const std::string & volumeTimelineFile );
 
 #include "Workflows\VoxelTagBoundariesWorkflow.h"
+#include "Workflows\VoxelTagBoundariesWorkflow2.h"
 #include "Workflows\VoxelTagBoundariesWorkflowRef.h"
 
 #include "Workflows\ImportBinaryMeshWorkflow.h"
@@ -109,11 +110,11 @@ int main( int argc, char * argv[] )
 	std::string prefix = "";
 
 	std::vector<std::string> meshes = {
-		//"patients/bs/bsArteries/surfaces/",
-		//"patients/bs/bsCSF/surfaces/",
+		"patients/bs/bsArteries/surfaces/",
+		"patients/bs/bsCSF/surfaces/",
 		"patients/bs/bsGray/surfaces/",
-		//"patients/bs/bsVeins/surfaces/",
-		//"patients/bs/bsWhite/surfaces/"
+		"patients/bs/bsVeins/surfaces/",
+		"patients/bs/bsWhite/surfaces/"
 	};
 
 	std::string outputPath = "voxeloutput/";
@@ -121,11 +122,11 @@ int main( int argc, char * argv[] )
 		CreateDirectoryA( outputPath.c_str( ), nullptr );
 
 	std::vector<std::string> meshNames = {
-		//"Arteries",
-		//"CSF",
+		"Arteries",
+		"CSF",
 		"Gray",
-		//"Veins",
-		//"White"
+		"Veins",
+		"White"
 	};
 
 	
@@ -148,7 +149,8 @@ int main( int argc, char * argv[] )
 		std::cout << "Generating tag data for matrix " << res << "x" << res << "x" << res << "..." << std::endl;
 		startA = clock( );
 		//workflow_tag_voxels_with_mesh_boundary( &vm, mesh_chunks );
-		workflow_tag_voxels_with_mesh_boundary_ref( &vm, mesh_chunks );
+		workflow_tag_voxels_with_mesh_boundary2( &vm, mesh_chunks );
+		//workflow_tag_voxels_with_mesh_boundary_ref( &vm, mesh_chunks );
 		//vm.generate_test_data( );
 		std::cout << "Done. Took " << ( clock( ) - startA ) / 1000.0f << "s" << std::endl;
 
@@ -175,7 +177,7 @@ int main( int argc, char * argv[] )
 		}
 
 
-		run_window( vm );
+		//run_window( vm );
 
 		delete vm.dev_voxel_data;
 		vm.dev_voxel_data = nullptr;

@@ -66,6 +66,18 @@ struct triangle
 	{
 		return ( a + b + c ) * 0.33333f;
 	}
+
+	triangle & operator=( const triangle & nt ) restrict( amp, cpu )
+	{
+		a = nt.a;
+		b = nt.b;
+		c = nt.c;
+		norm_a = nt.norm_a;
+		norm_b = nt.norm_b;
+		norm_c = nt.norm_c;
+
+		return *this;
+	}
 };
 
 struct mesh_partition_descriptor
@@ -94,6 +106,13 @@ struct mesh_chunk
 struct voxel
 {
 	float_3 start, end;
+
+	inline voxel & operator=( const voxel & o ) restrict( cpu, amp )
+	{
+		start = o.start;
+		end = o.end;
+		return *this;
+	}
 
 	inline bool contains_point( float_3 point ) restrict( cpu, amp )
 	{

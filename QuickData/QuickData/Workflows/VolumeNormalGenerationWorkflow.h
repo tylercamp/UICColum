@@ -13,6 +13,17 @@ struct volume_hexahedral
 	//	numStored incremented upon generation, should reach VOLUME_MEMBER_COUNT
 	volume_hexahedral( ) : numStored( 0 ), center( 0.0f ) { }
 
+	volume_hexahedral & operator=( const volume_hexahedral & vt ) restrict( cpu, amp )
+	{
+		numStored = vt.numStored;
+		center = vt.center;
+
+		for( int i = 0; i < VOLUME_MEMBER_COUNT; i++ )
+			tris[i] = vt.tris[i];
+
+		return *this;
+	}
+
 	//	6 faces to a hexahedron, 2 triangles per face
 	triangle tris[VOLUME_MEMBER_COUNT];
 	int numStored;
@@ -25,6 +36,17 @@ struct volume_tetrahedral
 	//	numStored incremented upon generation, should reach VOLUME_MEMBER_COUNT
 	volume_tetrahedral( ) : numStored( 0 ), center( 0.0f )
 	{
+	}
+
+	volume_tetrahedral & operator=( const volume_tetrahedral & vt ) restrict( cpu, amp )
+	{
+		numStored = vt.numStored;
+		center = vt.center;
+
+		for( int i = 0; i < VOLUME_MEMBER_COUNT; i++ )
+			tris[i] = vt.tris[i];
+
+		return *this;
 	}
 
 	//	4 faces to a tetrahedron

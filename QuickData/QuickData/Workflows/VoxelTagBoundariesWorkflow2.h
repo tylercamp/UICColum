@@ -3,7 +3,7 @@
 #include "../Types.h"
 
 //	CPU implementation of voxel tagging for correctness
-void workflow_tag_voxels_with_mesh_boundary_ref( voxel_matrix * voxelmatrix, cpu_chunk_array * chunked_mesh )
+void workflow_tag_voxels_with_mesh_boundary2( voxel_matrix * voxelmatrix, cpu_chunk_array * chunked_mesh )
 {
 	auto & voxels = *voxelmatrix->dev_voxels;
 	int_3 voxelstack_dims = int_3( voxelmatrix->width, voxelmatrix->height, voxelmatrix->depth );

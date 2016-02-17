@@ -3,7 +3,7 @@
 #include "../Types.h"
 
 //	V3
-
+/*
 void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chunk_array * chunked_mesh )
 {
 	if( !voxelmatrix->dev_voxels )
@@ -18,6 +18,21 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 	{
 		gpu_triangle_array * chunk_tris = new gpu_triangle_array( chunked_mesh->at( i ).tris );
 		chunked_mesh_tris.push_back( chunk_tris );
+
+		chunk_tris->synchronize( concurrency::access_type_read_write );
+
+	#ifdef _DEBUG
+		const auto & src = chunked_mesh->at( i );
+
+		//	Confirm that copy went okay...
+		for( int t = 0; t < src.num_tris; t++ )
+		{
+			auto a = src.tris[t];
+			auto b = chunk_tris->operator()( t );
+			if( a.a != b.a || a.b != b.b || a.c != b.c || a.center != b.center )
+				__debugbreak( );
+		}
+	#endif
 	}
 
 	std::cout << "Done.\n";
@@ -143,10 +158,11 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 	for( auto tris : chunked_mesh_tris )
 		delete tris;
 }
+*/
 
 //	V2
 
-/*
+
 
 void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chunk_array * chunked_mesh )
 {
@@ -248,10 +264,9 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 	gpu_array<int_3> dev_chunk_voxel_end( chunk_voxel_overlap_end );
 
 	//	Attempt minimal full-voxel solution for GPU reference implementation
-
-	//	Breaks at least on chunk i=200
+	
 	std::cout << "BEGINNING VOXEL-MESH TAGGING" << std::endl;
-	for( int i = 200; i < 201; i++ )
+	for( int i = 0; i < chunked_mesh->size( ); i++ )
 	{
 		//	Should switch to TRIS-major grouping, more numerically stable than voxels-major
 
@@ -337,7 +352,7 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 	for( auto tris : chunked_mesh_tris )
 		delete tris;
 }
-*/
+
 
 
 
