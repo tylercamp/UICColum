@@ -251,6 +251,16 @@ typedef std::vector<mesh_chunk> cpu_chunk_array;
 
 
 
+enum VolumeType
+{
+	VolumeTypeUnknown = 0,
+	VolumeTypeHexahedral,
+	VolumeTypeTetrahedral
+};
+
+
+
+
 
 //	This is a Utility, but its usage cases are better fitted to Types
 

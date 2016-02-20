@@ -11,7 +11,7 @@ void workflow_gather_mesh_bounds( gpu_triangle_array * mesh, float_3 * out_min, 
 	auto & dev_tris = *mesh;
 	auto base_extent = dev_tris.extent;
 
-#define TILE_SIZE 128
+#define TILE_SIZE 256
 
 	array_view<float_3> mins( base_extent / TILE_SIZE + 1 );
 	mins.discard_data( );
@@ -20,12 +20,15 @@ void workflow_gather_mesh_bounds( gpu_triangle_array * mesh, float_3 * out_min, 
 
 	//	Repeat while size > target_size
 
+	
 	int tris_per_tile = base_extent[0] / TILE_SIZE;
 	if( tris_per_tile > 0xFFFF )
 	{
 		throw "Mesh too large, tiling size must be increased for processing";
 	}
+	
 
+	//	FUTURE TODO: USE 2D TILE EXTENTS
 	parallel_for_each(
 		base_extent.tile<TILE_SIZE>( ).pad( ),
 		[dev_tris, mins, maxs]( tiled_index<TILE_SIZE> t_idx ) restrict( amp )

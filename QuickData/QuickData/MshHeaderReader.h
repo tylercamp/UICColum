@@ -47,20 +47,14 @@ class MshHeaderReader
 	{
 		auto start = clock( );
 
+		std::stringstream ss( fileData );
+
 		std::vector<std::string> & result = *output;
 		result.reserve( length / 3 ); // heuristic
 
-		int startIndex = 0;
-		for( std::size_t i = 0; i < length; i++ )
-		{
-			if( fileData[i] != '\r' && fileData[i] != '\n' )
-				continue;
-
-			std::string line;
-			line.assign( fileData + startIndex, fileData + i );
-			result.emplace_back( line );
-			startIndex = i + 1;
-		}
+		std::string line;
+		while( std::getline( ss, line, '\n' ) )
+			result.push_back( line );
 
 		result.reserve( result.size( ) );
 	}
@@ -109,7 +103,7 @@ class MshHeaderReader
 			return fileLines.size( ) - baseIndex;
 
 		std::vector<double> result;
-		result.reserve( numVolumes );
+		result.resize( numVolumes );
 
 		int lastLine = dataStartIndex;
 		//	Gather data until we reach a closing parenthesis
@@ -122,7 +116,7 @@ class MshHeaderReader
 				break;
 			}
 
-			result.push_back( ParseFloat( line ) );
+			result[i - dataStartIndex] = ParseFloat( line );
 		}
 
 		if( result.size( ) > 0 )
@@ -144,16 +138,16 @@ public:
 
 	void Load( const std::string & filepath )
 	{
+		auto filesize = getFileSize( filepath );;
+
 		FILE * file;
 		fopen_s( &file, filepath.c_str( ), "r" );
-		std::size_t filesize;
-		fseek( file, 0, SEEK_END );
-		filesize = ftell( file );
-		fseek( file, 0, SEEK_SET );
-
+		
+		std::cout << "Loading file... ";
 		char * fileData = new char[filesize];
 		fread( fileData, 1, filesize, file );
 		fclose( file );
+		std::cout << "Done." << std::endl;
 
 		std::cout << "Preprocessing data... ";
 		std::vector<std::string> lines;

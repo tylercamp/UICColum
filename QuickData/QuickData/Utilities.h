@@ -136,6 +136,26 @@ std::string formatTime( long ms )
 	return result.str( );
 }
 
+std::uint64_t getFileSize( std::string name )
+{
+	//	http://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
+	HANDLE hFile = CreateFileA( name.c_str( ), GENERIC_READ,
+							   FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+							   FILE_ATTRIBUTE_NORMAL, NULL );
+	if( hFile == INVALID_HANDLE_VALUE )
+		return -1; // error condition, could call GetLastError to find out more
+
+	LARGE_INTEGER size;
+	if( !GetFileSizeEx( hFile, &size ) )
+	{
+		CloseHandle( hFile );
+		return -1; // error condition, could call GetLastError to find out more
+	}
+
+	CloseHandle( hFile );
+	return size.QuadPart;
+}
+
 bool directoryExists( const std::string & path )
 {
 	auto cpath = path.back( ) == '/' || path.back( ) == '\\' ? path : path + '/';

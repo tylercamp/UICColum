@@ -14,9 +14,9 @@ void process_volume_states( const std::string & sourceMeshHeader )
 
 	std::cout << "OPERATING ON " << sourceMeshHeader << std::endl;
 
-	gpu_data_sequence_array * data;
+	cpu_data_sequence_array * data;
 	double * timestamps;
-	workflow_import_msh_header( sourceMeshHeader, &data, &timestamps );
+	workflow_import_msh_header_cpu( sourceMeshHeader, &data, &timestamps );
 
 	workflow_volume_data_export( getStoragePath( sourceMeshHeader ) + ".binvolumes", data, timestamps );
 

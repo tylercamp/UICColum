@@ -104,8 +104,8 @@ int main( int argc, char * argv[] )
 	
 	
 
-
-
+	/*
+	
 	//std::string prefix = "C:/Users/algor/Desktop/UIC/";
 	std::string prefix = "";
 
@@ -199,7 +199,7 @@ int main( int argc, char * argv[] )
 
 	return 0;
 	
-	
+	*/
 	
 
 	std::vector<std::string> jobList;
@@ -221,7 +221,13 @@ int main( int argc, char * argv[] )
 	if( jobList.size( ) == 0 )
 	{
 		jobList = {
-			"patients/bs/bs",
+			//"patients/KevinBestV7.GAMBIT.msh",
+			"patients/CNSTest-1-00051.dat.mm",
+			//"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
+			//"msh-hexahedral/Grant2-10-00001.dat.mm",
+			//"msh-hexahedral/CYcutBAv3.GAMBIT.msh",
+			//"msh-tetrahedral/FullCNSINJ_V1.GAMBIT.msh",
+			//"patients/bs/bs",
 			//"patients/ch/ch",
 			//"patients/ig/ig",
 			//"patients/kt/kt",
@@ -258,8 +264,8 @@ int main( int argc, char * argv[] )
 
 	std::cout << "\n\nTOTAL OPERATION TOOK: ~" << (end - start) / 1000 << "s" << std::endl;
 
-	PlaySound( TEXT( "SystemStart" ), nullptr, SND_ALIAS );
-	SetForegroundWindow( GetConsoleWindow( ) );
+	//PlaySound( TEXT( "SystemStart" ), nullptr, SND_ALIAS );
+	//SetForegroundWindow( GetConsoleWindow( ) );
 
 	pause( );
 	return 0;

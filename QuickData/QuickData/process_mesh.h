@@ -93,15 +93,16 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 		gpu_vertex_array * points;
 		//	Tags are the real "volume indices"
 		gpu_index_array * surfaceIndices, * surfaceTags, * volumeIndices, * volumeTags;
+		VolumeType volumeType;
 
-		int numVolumes = workflow_import_msh( file, &points, &surfaceIndices, &surfaceTags, &volumeIndices, &volumeTags );
+		int numVolumes = workflow_import_msh( file, &points, &surfaceIndices, &surfaceTags, &volumeIndices, &volumeTags, &volumeType );
 		workflow_gen_tris( points, surfaceIndices, &tris );
 		workflow_gen_tris( points, volumeIndices, &volumeTris );
 		workflow_tag_mesh_volumes( volumeTris, volumeTags );
 		workflow_tag_mesh_volumes( tris, surfaceTags );
 		workflow_gen_normals( tris );
 		//workflow_gen_normals( volumeTris );
-		workflow_gen_volume_normals( volumeTris, numVolumes );
+		workflow_gen_volume_normals( volumeTris, numVolumes, volumeType );
 
 		delete points;
 		delete surfaceIndices, surfaceTags, volumeIndices, volumeTags;

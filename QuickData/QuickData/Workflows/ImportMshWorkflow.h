@@ -8,7 +8,7 @@
 
 
 //	Returns number of volumes in the MSH file
-int workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_points, gpu_index_array ** out_surface_indices, gpu_index_array ** out_surface_tags, gpu_index_array ** out_volume_indices, gpu_index_array ** out_volume_tags )
+int workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_points, gpu_index_array ** out_surface_indices, gpu_index_array ** out_surface_tags, gpu_index_array ** out_volume_indices, gpu_index_array ** out_volume_tags, VolumeType * out_volumes_type )
 {
 	cpu_vertex_array cpu_vertices;
 	cpu_index_array cpu_surface_indices;
@@ -28,6 +28,8 @@ int workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_p
 		cpu_vertices.push_back( float_3( currentPoint.data[0], currentPoint.data[1], currentPoint.data[2] ) );
 	}
 
+	VolumeType volumeType = VolumeTypeUnknown;
+
 	for( std::size_t i = 0; i < reader->FaceData.size( ); i++ )
 	{
 		auto & faceData = reader->FaceData[i];
@@ -35,6 +37,27 @@ int workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_p
 		for( std::size_t j = 0; j < faceData.data.size( ); j++ )
 		{
 			auto & face = faceData.data[j];
+
+			VolumeType faceVolumeType = VolumeTypeUnknown;
+
+			if( face.type == MshFaceType::MSH_TETRAHEDRON )
+				faceVolumeType = VolumeTypeTetrahedral;
+			if( face.type == MshFaceType::MSH_HEXAHEDRON )
+				faceVolumeType = VolumeTypeHexahedral;
+
+			if( faceVolumeType == VolumeTypeUnknown )
+				NOT_YET_IMPLEMENTED( );
+
+			if( volumeType == VolumeTypeUnknown )
+				volumeType = faceVolumeType;
+			else
+			{
+				if( volumeType != faceVolumeType )
+				{
+					std::cout << "INCONSISTENT VOLUME TYPE (MIXING TETRA-/HEXA-HEDRAL) IN SAME MESH" << std::endl;
+					NOT_YET_IMPLEMENTED( );
+				}
+			}
 
 			switch( face.type )
 			{
@@ -145,6 +168,7 @@ int workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_p
 	*out_surface_tags = bindless_copy( cpu_surface_tags );
 	*out_volume_indices = bindless_copy( cpu_volume_indices );
 	*out_volume_tags = bindless_copy( cpu_volume_tags );
+	*out_volumes_type = volumeType;
 
 	return reader->VolumeCount;
 }
