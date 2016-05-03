@@ -287,7 +287,7 @@ int main( int argc, char * argv[] )
 			////"patients/for-tyler/GAMBIT.CY.kt.msh", // fail! (formatting!)
 			////"patients/for-tyler/GAMBIT.CY.mg2.msh", // fail! (formatting!)
 			//"patients/for-tyler/GAMBIT.CY.nn.msh", // success! (previous failure likely due to incorrect point parsing)
-			"patients/for-tyler/GAMBIT.CY.ben.msh", // fail gen_volume_normals!
+			//"patients/for-tyler/GAMBIT.CY.ben.msh", // fail gen_volume_normals!
 
 			////	success!
 			//"patients/for-tyler/bsSurf.msh",
@@ -312,7 +312,7 @@ int main( int argc, char * argv[] )
 
 			//"patients/KevinBestV7.GAMBIT.msh",
 			//"patients/CNSTest-1-00051.dat.mm",
-			////"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
+			"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
 			//"msh-hexahedral/Grant2-10-00001.dat.mm",
 			//"msh-hexahedral/CYcutBAv3.GAMBIT.msh",
 			//"patients/bs/bs",

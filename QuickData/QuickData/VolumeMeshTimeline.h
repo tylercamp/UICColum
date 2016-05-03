@@ -43,8 +43,6 @@ public:
 
 		sort( );
 
-		int numStates = states.size( );
-
 		FILE * file = fopen( filePath.c_str( ), "wb" );
 		if( !file )
 			NOT_YET_IMPLEMENTED( );
@@ -70,10 +68,7 @@ public:
 		if( readStartTag != TIMELINE_FILE_START_TAG )
 			NOT_YET_IMPLEMENTED( );
 
-		int numStates;
-		fread( &numStates, sizeof( int ), 1, file );
-
-		for( int i = 0; i < numStates; i++ )
+		while( !feof( file ) )
 		{
 			auto loadedState = new VolumeMeshState( );
 			loadedState->LoadFrom( file );
@@ -83,3 +78,4 @@ public:
 		fclose( file );
 	}
 };
+

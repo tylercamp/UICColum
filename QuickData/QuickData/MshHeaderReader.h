@@ -48,13 +48,17 @@ class MshHeaderReader
 		auto start = clock( );
 
 		std::stringstream ss( fileData );
+		std::size_t offset = ss.tellg( );
 
 		std::vector<std::string> & result = *output;
 		result.reserve( length / 3 ); // heuristic
 
 		std::string line;
-		while( std::getline( ss, line, '\n' ) )
+		while( offset < length && std::getline( ss, line, '\n' ) )
+		{
 			result.push_back( line );
+			offset = ss.tellg( );
+		}
 
 		result.reserve( result.size( ) );
 	}
@@ -182,7 +186,9 @@ public:
 			}
 		}
 
+		delete[] fileData;
 		fclose( file );
+		return fileavail;
 	}
 
 	void Load( const std::string & filepath )

@@ -30,7 +30,7 @@ void workflow_import_msh_header_cpu( const std::string & fileName, cpu_data_sequ
 	MshHeaderReader reader( fileName );
 
 	auto resultData = new cpu_data_sequence_array( );
-	auto resultTimestamps = new double[resultData->size( )];
+	auto resultTimestamps = new double[reader.data.size( )];
 
 	for( int i = 0; i < reader.data.size( ); i++ )
 	{
@@ -45,5 +45,22 @@ void workflow_import_msh_header_cpu( const std::string & fileName, cpu_data_sequ
 //	Returns num bytes read
 std::size_t workflow_import_msh_header_cpu_part( const std::string & fileName, std::size_t maxBytes, std::size_t offsetBytes, cpu_data_sequence_array ** out_data, double ** out_timeStamps )
 {
-	return -1;
+	MshHeaderReader reader;
+	auto amountLoaded = reader.LoadPart( fileName, offsetBytes, maxBytes );
+	if( !amountLoaded )
+		return 0;
+
+	auto resultData = new cpu_data_sequence_array( );
+	auto resultTimestamps = new double[reader.data.size( )];
+
+	for( int i = 0; i < reader.data.size( ); i++ )
+	{
+		resultData->push_back( new cpu_data_array( reader.data[i] ) );
+		resultTimestamps[i] = 0.0;
+	}
+
+	*out_data = resultData;
+	*out_timeStamps = resultTimestamps;
+
+	return amountLoaded;
 }
