@@ -125,7 +125,7 @@ int main( int argc, char * argv[] )
 	
 	
 	
-
+	//	VOXEL MATRIX TAGGING (NOT USED FOR CONVERSION OPS)
 #if false
 	
 	//std::string prefix = "C:/Users/algor/Desktop/UIC/";
