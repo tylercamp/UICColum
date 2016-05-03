@@ -20,7 +20,7 @@ enum MshFaceType
 struct MshFace
 {
 	MshFaceType type;
-	int point_indices[MAX_FACE_ELEMENTS];
+	std::size_t point_indices[MAX_FACE_ELEMENTS];
 	bool is_inner;
 };
 
@@ -50,14 +50,14 @@ class MshReader
 
 
 
-	int ParseInt( const std::string & str )
+	std::size_t ParseInt( const std::string & str )
 	{
-		return std::stoul( str );
+		return std::stoull( str );
 	}
 
-	int ParseHexInt( const std::string & str )
+	std::size_t ParseHexInt( const std::string & str )
 	{
-		return std::stoul( str, nullptr, 16 );
+		return std::stoull( str, nullptr, 16 );
 	}
 
 	float ParseFloat( const std::string & str )
@@ -73,7 +73,7 @@ class MshReader
 
 		std::vector<std::string> & result = *output;
 
-		int startIndex = 0;
+		std::size_t startIndex = 0;
 		for( std::size_t i = 0; i < text.length( ); i++ )
 		{
 			if( text[i] != ' ' )
@@ -90,14 +90,14 @@ class MshReader
 
 
 
-	std::vector<std::string> GenerateLines( const char * fileData, int length )
+	std::vector<std::string> GenerateLines( const char * fileData, std::size_t length )
 	{
 		auto start = clock( );
 
 		std::vector<std::string> result;
 		result.reserve( length / 3 ); // heuristic
 
-		int startIndex = 0;
+		std::size_t startIndex = 0;
 		for( std::size_t i = 0; i < length; i++ )
 		{
 			if( fileData[i] != '\r' && fileData[i] != '\n' )
@@ -105,6 +105,7 @@ class MshReader
 
 			std::string line;
 			line.assign( fileData + startIndex, fileData + i );
+			line = trim( line );
 			result.emplace_back( line );
 			startIndex = i + 1;
 		}
@@ -118,7 +119,7 @@ public:
 	std::vector<MshPointData> PointData;
 	std::vector<MshFaceData> FaceData;
 
-	int VolumeCount;
+	std::size_t VolumeCount;
 
 	MshReader( const std::string & filename )
 	{
@@ -153,7 +154,7 @@ public:
 		delete filedata;
 	}
 
-	void Parse( const char * fileData, int length )
+	void Parse( const char * fileData, std::size_t length )
 	{
 		if( IsLoaded( ) )
 			__debugbreak( );
@@ -181,12 +182,30 @@ public:
 					continue;
 				}
 
-				int startIndex = -1;
 				int numData = 0;
 				MshPoint pt;
+
+				for( int startIndex = lineText.find_first_not_of(' '); startIndex < lineText.size( ); )
+				{
+					int spaceIdx = lineText.find( ' ', startIndex );
+					if( spaceIdx == lineText.npos )
+					{
+						pt.data[numData++] = ParseFloat( lineText.substr( startIndex ) );
+						startIndex = lineText.size( );
+					}
+					else
+					{
+						auto val = lineText.substr( startIndex, spaceIdx - startIndex );
+						pt.data[numData++] = ParseFloat( val );
+						int nextStart = lineText.find_first_not_of( ' ', spaceIdx );
+						startIndex = nextStart != lineText.npos ? nextStart : lineText.size();
+					}
+				}
+
+				/*
 				for( int i = 0; i < lineText.size( ); i++ )
 				{
-					if( startIndex > 0 )
+					if( startIndex > -1 )
 					{
 						if( lineText[i] == ' ' )
 						{
@@ -204,6 +223,8 @@ public:
 						startIndex = i;
 					}
 				}
+				*/
+
 				PointData.back( ).data.emplace_back( pt );
 				break;
 			}
@@ -221,7 +242,36 @@ public:
 				int startIndex = -1;
 				int numData = 0;
 				MshFace face;
-				for( int i = 0; i < lineText.size( ); i++ )
+				for( std::size_t startIndex = lineText.find_first_not_of(' '); startIndex < lineText.size( ); )
+				{
+					int spaceIdx = lineText.find( ' ', startIndex );
+					if( spaceIdx == lineText.npos )
+					{
+						auto val = lineText.substr( startIndex );
+						face.point_indices[numData++ - 1] = ParseHexInt( val );
+						startIndex = lineText.size( );
+					}
+					else
+					{
+						auto val = lineText.substr( startIndex, spaceIdx - startIndex );
+						std::size_t idx = ParseHexInt( val );
+
+						if( numData == 0 ) {
+							face.type = (MshFaceType) idx;
+							++numData;
+						}
+						else {
+							face.point_indices[numData++ - 1] = idx;
+						}
+
+
+						int nextStart = lineText.find_first_not_of( ' ', spaceIdx );
+						startIndex = nextStart != lineText.npos ? nextStart : lineText.size( );
+					}
+				}
+
+				/*
+				for( std::size_t i = 0; i < lineText.size( ); i++ )
 				{
 					if( startIndex > -1 )
 					{
@@ -230,7 +280,7 @@ public:
 							std::string dataChunk = lineText.substr( startIndex, i - startIndex );
 							if( numData == 0 )
 							{
-								face.type = (MshFaceType)ParseInt( dataChunk );
+								face.type = (MshFaceType) ParseInt( dataChunk );
 								++numData;
 							}
 							else
@@ -249,8 +299,9 @@ public:
 						startIndex = i;
 					}
 				}
+				*/
 
-				face.is_inner = (face.point_indices[numData - 2] != 0);
+				face.is_inner = (face.point_indices[numData - 2] != 0); // normally -1 for array size, but -2 for array size and taking into account face type (counted in numData)
 				FaceData.back( ).data.emplace_back( face );
 
 				break;
@@ -258,13 +309,15 @@ public:
 
 			case(None) :
 			{
+				const auto nextLine = line + 1 == lines.size( ) ? "" : lines[line + 1];
+
 				if( lineText[0] != '(' )
 					continue;
 
 				int listType = ParseInt( lineText.substr( 1, lineText.find( ' ' ) ) );
-				if( listType == 12 )
+				if( listType == 12 ) // volumes declaration
 				{
-					std::cout << "Reading volume count...";
+					std::cout << "Reading volume count...\n";
 					std::vector<std::string> list;
 					int listStart = lineText.find_last_of( '(' ) + 1;
 					int listEnd = lineText.find_first_of( ')' );
@@ -273,8 +326,29 @@ public:
 					continue;
 				}
 
-				if( lineText[lineText.size( ) - 1] != '(' )
+
+				int numOpenParen = std::count( lineText.begin( ), lineText.end( ), '(' );
+				int numCloseParen = std::count( lineText.begin( ), lineText.end( ), ')' );
+
+				int nextNumOpenParen = std::count( nextLine.begin( ), nextLine.end( ), '(' );
+				int nextNumCloseParen = std::count( nextLine.begin( ), nextLine.end( ), ')' );
+
+				if( numOpenParen == numCloseParen )
 					continue;
+
+				/*
+				(12 (...)
+				(
+				*/
+				bool isNoncontiguousLine = false;
+				if( numOpenParen > numCloseParen && nextNumOpenParen > 0 )
+				{
+					isNoncontiguousLine = true;
+				}
+
+				
+
+
 
 				switch( listType )
 				{
@@ -290,9 +364,12 @@ public:
 					parseMode = Faces;
 					break;
 
-				default:
-					__debugbreak( );
+				//default:
+					//__debugbreak( );
 				}
+
+				if( isNoncontiguousLine )
+					++line;
 
 				break;
 			}

@@ -8,7 +8,7 @@
 
 
 //	Returns number of volumes in the MSH file
-int workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_points, gpu_index_array ** out_surface_indices, gpu_index_array ** out_surface_tags, gpu_index_array ** out_volume_indices, gpu_index_array ** out_volume_tags, VolumeType * out_volumes_type )
+std::size_t workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_points, gpu_index_array ** out_surface_indices, gpu_index_array ** out_surface_tags, gpu_index_array ** out_volume_indices, gpu_index_array ** out_volume_tags, VolumeType * out_volumes_type )
 {
 	cpu_vertex_array cpu_vertices;
 	cpu_index_array cpu_surface_indices;
@@ -164,11 +164,30 @@ int workflow_import_msh( const std::string & fileName, gpu_vertex_array ** out_p
 	}
 
 	*out_points = bindless_copy( cpu_vertices );
-	*out_surface_indices = bindless_copy( cpu_surface_indices );
-	*out_surface_tags = bindless_copy( cpu_surface_tags );
-	*out_volume_indices = bindless_copy( cpu_volume_indices );
-	*out_volume_tags = bindless_copy( cpu_volume_tags );
+
+	if (cpu_surface_indices.size())
+		*out_surface_indices = bindless_copy(cpu_surface_indices);
+	else
+		*out_surface_indices = nullptr;
+
+	if (cpu_surface_tags.size())
+		*out_surface_tags = bindless_copy(cpu_surface_tags);
+	else
+		*out_surface_tags = nullptr;
+
+	if (cpu_volume_indices.size())
+		*out_volume_indices = bindless_copy(cpu_volume_indices);
+	else
+		*out_volume_indices = nullptr;
+
+	if (cpu_volume_tags.size())
+		*out_volume_tags = bindless_copy(cpu_volume_tags);
+	else
+		*out_volume_tags = nullptr;
+
 	*out_volumes_type = volumeType;
 
-	return reader->VolumeCount;
+	auto volumeCount = reader->VolumeCount;
+	delete reader;
+	return volumeCount;
 }

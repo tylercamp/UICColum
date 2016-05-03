@@ -1,94 +1,132 @@
+
 #pragma once
 
-#include <amp_graphics.h>
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
+#include <cstdint>
+#include <vector>
 
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <algorithm> 
-#include <functional>
-#include <cctype>
+
+#include "cuda_runtime.h"
+
+#define NOT_YET_IMPLEMENTED() __debugbreak()
+
+
+
+
+/* Types hacked in */
+
+struct triangle
+{
+	//	a, b, c, are the 3 vertices defining the triangle
+
+	//	Use 3-dimensional floats to represent each point as X, Y, Z
+	float3 a, b, c;
+
+	//	For each vertex, also associate a normal perpendicular to the face (value is currently the same for all 3)
+	float3 norm_a, norm_b, norm_c;
+
+	//	Index of the volume associated with this triangle. If there is no volume associated, this is -1.
+	int volumeIndex;
+
+	triangle( ) : volumeIndex( -1 )
+	{
+	}
+
+	__declspec(property(get = get_center)) float3 center;
+	float3 get_center( )
+	{
+		float3 result;
+		result.x = a.x + b.x + c.x;
+		result.y = a.y + b.y + c.y;
+		result.z = a.z + b.z + c.z;
+		result.x *= 0.33333f;
+		result.y *= 0.33333f;
+		result.z *= 0.33333f;
+		return result;
+	}
+
+	triangle & operator=(const triangle & nt)
+	{
+		a = nt.a;
+		b = nt.b;
+		c = nt.c;
+		norm_a = nt.norm_a;
+		norm_b = nt.norm_b;
+		norm_c = nt.norm_c;
+
+		return *this;
+	}
+};
+
+struct mesh_partition_descriptor
+{
+	float3 bounds_start, bounds_end;
+
+	bool contains_point( float3 p ) const
+	{
+		return
+			bounds_start.x <= p.x &&
+			bounds_start.y <= p.y &&
+			bounds_start.z <= p.z &&
+			bounds_end.x >= p.x &&
+			bounds_end.y >= p.y &&
+			bounds_end.z >= p.z;
+	}
+};
+
+struct mesh_chunk
+{
+	int num_tris;
+	std::vector<triangle> tris;
+	mesh_partition_descriptor bounds;
+};
+
+struct voxel
+{
+	float3 start, end;
+
+	inline voxel & operator=(const voxel & o)
+	{
+		start = o.start;
+		end = o.end;
+		return *this;
+	}
+
+	inline bool contains_point( float3 point )
+	{
+		return
+			start.x <= point.x && start.y <= point.y && start.z <= point.z &&
+			end.x >= point.x && end.y >= point.y && end.z >= point.z;
+	}
+};
+
+
+
+
+
+
+
+
+
 
 /* Utility functions */
 
 template <typename l, typename r>
-inline l max( l left, r right ) restrict( cpu, amp )
+inline l max( l left, r right )
 {
 	return left > right ? left : right;
-}
-
-using concurrency::graphics::float_3;
-template <>
-inline float_3 max<float_3, float_3>( float_3 left, float_3 right ) restrict( cpu, amp )
-{
-	return float_3(
-		max( left.x, right.x ),
-		max( left.y, right.y ),
-		max( left.z, right.z )
-	);
-}
-
-using concurrency::graphics::int_3;
-template <>
-inline int_3 max<int_3, int_3>( int_3 left, int_3 right ) restrict( cpu, amp )
-{
-	return int_3(
-		max( left.x, right.x ),
-		max( left.y, right.y ),
-		max( left.z, right.z )
-		);
-}
-
-template <typename l, typename r>
-inline l min( l left, r right ) restrict( amp )
-{
-	return left < right ? left : right;
 }
 
 template <typename l, typename r>
 inline l min( l left, r right )
 {
 	return left < right ? left : right;
-}
-
-template <>
-inline float_3 min<float_3, float_3>( float_3 left, float_3 right )
-{
-	return float_3(
-		min( left.x, right.x ),
-		min( left.y, right.y ),
-		min( left.z, right.z )
-		);
-}
-
-template <>
-inline int_3 min<int_3, int_3>( int_3 left, int_3 right )
-{
-	return int_3(
-		min( left.x, right.x ),
-		min( left.y, right.y ),
-		min( left.z, right.z )
-		);
-}
-
-template <>
-inline float_3 min<float_3, float_3>( float_3 left, float_3 right ) restrict( amp )
-{
-	return float_3(
-		min( left.x, right.x ),
-		min( left.y, right.y ),
-		min( left.z, right.z )
-		);
-}
-
-template <>
-inline int_3 min<int_3, int_3>( int_3 left, int_3 right ) restrict( amp )
-{
-	return int_3(
-		min( left.x, right.x ),
-		min( left.y, right.y ),
-		min( left.z, right.z )
-		);
 }
 
 std::string formatDataSize( long long numBytes )
@@ -172,13 +210,13 @@ std::uint64_t getFileSize( std::string name )
 							   FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
 							   FILE_ATTRIBUTE_NORMAL, NULL );
 	if( hFile == INVALID_HANDLE_VALUE )
-		return -1; // error condition, could call GetLastError to find out more
+		return (std::uint64_t)-1; // error condition, could call GetLastError to find out more
 
 	LARGE_INTEGER size;
 	if( !GetFileSizeEx( hFile, &size ) )
 	{
 		CloseHandle( hFile );
-		return -1; // error condition, could call GetLastError to find out more
+		return (std::uint64_t) - 1; // error condition, could call GetLastError to find out more
 	}
 
 	CloseHandle( hFile );
@@ -215,7 +253,7 @@ std::string getStoragePath( const std::string & referencePath )
 std::string toLower( const std::string & s )
 {
 	std::string result;
-	for( int i = 0; i < s.size( ); i++ )
+	for( std::size_t i = 0; i < s.size( ); i++ )
 		result += tolower( s[i] );
 	return result;
 }
@@ -262,7 +300,7 @@ std::string removeWhitespace( const std::string & s )
 {
 	std::string result;
 
-	for( int i = 0; i < s.size( ); i++ )
+	for( std::size_t i = 0; i < s.size( ); i++ )
 	{
 		char c = s[i];
 		if( c == ' ' || c == '\n' || c == '\r' || c == '\t' )
@@ -278,38 +316,6 @@ bool contains( const std::string & str, const std::string & text )
 	return str.find( text, 0 ) != str.npos;
 }
 
-
-
-//	http://stackoverflow.com/questions/216823/whats-the-best-way-to-trim-stdstring
-
-// trim from start
-static inline std::string &ltrim( std::string &s ) {
-	s.erase( s.begin( ), std::find_if( s.begin( ), s.end( ), std::not1( std::ptr_fun<int, int>( std::isspace ) ) ) );
-	return s;
-}
-
-// trim from end
-static inline std::string &rtrim( std::string &s ) {
-	s.erase( std::find_if( s.rbegin( ), s.rend( ), std::not1( std::ptr_fun<int, int>( std::isspace ) ) ).base( ), s.end( ) );
-	return s;
-}
-
-// trim from both ends
-static inline std::string &trim( std::string &s ) {
-	return ltrim( rtrim( s ) );
-}
-
-
-
-
-
-
-
-
-
-
-
-
 std::vector<std::string> findFiles( const std::string & fileSearchPath, const std::string & searchString = "" )
 {
 	std::vector<std::string> result;
@@ -317,10 +323,7 @@ std::vector<std::string> findFiles( const std::string & fileSearchPath, const st
 	std::string searchPath = fileSearchPath;
 
 	WIN32_FIND_DATAA ffd;
-	LARGE_INTEGER filesize;
-	size_t length_of_arg;
 	HANDLE hFind = INVALID_HANDLE_VALUE;
-	DWORD dwError = 0;
 
 	std::string inputPath( searchPath );
 	if( inputPath.back( ) != '\\' && inputPath.back( ) != '/' )
@@ -356,31 +359,94 @@ void pause( )
 	std::getline( std::cin, str );
 }
 
-float_3 cross( float_3 a, float_3 b ) restrict( amp )
+float3 cross( float3 a, float3 b )
 {
-	return float_3(
+	return make_float3(
 		a.y * b.z - a.z * b.y,
 		a.z * b.x - a.x * b.z,
 		a.x * b.y - a.y * b.x
 		);
 }
 
-float dot( float_3 a, float_3 b ) restrict( amp )
+float dot( float3 a, float3 b )
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-float mag2( float_3 v ) restrict( amp )
+float mag2( float3 v )
 {
 	return dot( v, v );
 }
 
-float_3 mag( float_3 v ) restrict( amp )
+float mag( float3 v )
 {
-	return concurrency::fast_math::sqrtf( mag2( v ) );
+	return sqrt( mag2( v ) );
 }
 
-float_3 norm( float_3 v ) restrict( amp )
+float3 norm( float3 v )
 {
-	return v / mag( v );
+	float invMag = 1.0f / mag( v );
+	return make_float3(
+		invMag * v.x,
+		invMag * v.y,
+		invMag * v.z
+		);
+}
+
+
+
+
+#define VECOP inline __host__ __device__
+
+VECOP float3 operator-(const float3 & lhs, const float3 & rhs)
+{
+	return make_float3( lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z );
+}
+
+VECOP float3 operator+(const float3 & lhs, const float3 & rhs)
+{
+	return make_float3( lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z );
+}
+
+VECOP float3 operator/(const float3 & lhs, const float3 & rhs)
+{
+	return make_float3( lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z );
+}
+
+VECOP float3 operator*(const float3 & lhs, const float3 & rhs)
+{
+	return make_float3( lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z );
+}
+
+
+
+VECOP float3 operator*(const float3 & lhs, const int3 & rhs)
+{
+	return make_float3( lhs.x * rhs.x, lhs.y * rhs.y, lhs.z * rhs.z );
+}
+
+VECOP float3 operator/(const float3 & lhs, const int3 & rhs)
+{
+	return make_float3( lhs.x / rhs.x, lhs.y / rhs.y, lhs.z / rhs.z );
+}
+
+
+
+VECOP float3 operator*(const float3 & lhs, const int & rhs)
+{
+	return make_float3( lhs.x * rhs, lhs.y * rhs, lhs.z * rhs );
+}
+
+VECOP float3 operator*(const float3 & lhs, const float & rhs)
+{
+	return make_float3( lhs.x * rhs, lhs.y * rhs, lhs.z * rhs );
+}
+
+
+
+
+
+VECOP float3 make_float3( const float & f )
+{
+	return make_float3( f, f, f );
 }

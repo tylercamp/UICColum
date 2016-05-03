@@ -104,7 +104,7 @@ int main( int argc, char * argv[] )
 	
 	
 
-	/*
+#if false
 	
 	//std::string prefix = "C:/Users/algor/Desktop/UIC/";
 	std::string prefix = "";
@@ -146,10 +146,22 @@ int main( int argc, char * argv[] )
 		cpu_chunk_array * mesh_chunks;
 		workflow_import_binary_mesh_set( prefix + meshpath, &mesh_chunks );
 
+		float_3 bounds_min = float_3( FLT_MAX );
+		float_3 bounds_max = float_3( -FLT_MAX );
+		for( auto & chunk : *mesh_chunks )
+		{
+			bounds_min = min( bounds_min, chunk.bounds.bounds_start );
+			bounds_max = max( bounds_max, chunk.bounds.bounds_end );
+
+			//	Quality check
+			float_3 range = chunk.bounds.bounds_end - chunk.bounds.bounds_start;
+			ASSERT( range.x > 0 && range.y > 0 && range.z > 0 );
+		}
+
 		std::cout << "Generating tag data for matrix " << res << "x" << res << "x" << res << "..." << std::endl;
 		startA = clock( );
-		//workflow_tag_voxels_with_mesh_boundary( &vm, mesh_chunks );
-		workflow_tag_voxels_with_mesh_boundary2( &vm, mesh_chunks );
+		workflow_tag_voxels_with_mesh_boundary( &vm, mesh_chunks );
+		//workflow_tag_voxels_with_mesh_boundary2( &vm, mesh_chunks );
 		//workflow_tag_voxels_with_mesh_boundary_ref( &vm, mesh_chunks );
 		//vm.generate_test_data( );
 		std::cout << "Done. Took " << ( clock( ) - startA ) / 1000.0f << "s" << std::endl;
@@ -177,7 +189,7 @@ int main( int argc, char * argv[] )
 		}
 
 
-		//run_window( vm );
+		run_window( vm );
 
 		delete vm.dev_voxel_data;
 		vm.dev_voxel_data = nullptr;
@@ -198,12 +210,38 @@ int main( int argc, char * argv[] )
 	pause( );
 
 	return 0;
-	
-	*/
-	
+#endif
 
 	std::vector<std::string> jobList;
 	bool invertAll = false;
+	
+	//	Allow output stream listeners to attach
+	Sleep( 100 );
+	
+	if( argc > 1 && std::string( argv[1] ).find( "-stringcommand" ) != std::string::npos )
+	{
+		//	Run in streaming mode - This process has been launched and is being polled
+		//	by an external application for progress and result information.
+
+		//	Interpret requested command parameters
+		using std::string;
+		string collapsedCommand;
+		{
+			string separator;
+			for( int i = 1; i < argc; i++ ) {
+				collapsedCommand += separator;
+				separator = " ";
+			}
+		}
+
+		string command = collapsedCommand;
+		std::cout << "Received command string:\n" << command << std::endl;
+		return 0;
+	}
+
+
+
+
 
 	for( int i = 1; i < argc; i++ )
 	{
@@ -221,23 +259,51 @@ int main( int argc, char * argv[] )
 	if( jobList.size( ) == 0 )
 	{
 		jobList = {
+			//
+			//"patients/for-tyler/GAMBIT.CY.ch.msh", // success!
+			//"patients/for-tyler/GAMBIT.CY.ig.msh", // success!
+			////"patients/for-tyler/GAMBIT.CY.kt.msh", // fail! (formatting!)
+			////"patients/for-tyler/GAMBIT.CY.mg2.msh", // fail! (formatting!)
+			//"patients/for-tyler/GAMBIT.CY.nn.msh", // success! (previous failure likely due to incorrect point parsing)
+			"patients/for-tyler/GAMBIT.CY.ben.msh", // fail gen_volume_normals!
+
+			////	success!
+			//"patients/for-tyler/bsSurf.msh",
+			//"patients/for-tyler/chSurf.msh",
+			//"patients/for-tyler/igSurf.msh",
+			//"patients/for-tyler/ktSurf.msh",
+			//"patients/for-tyler/mgSurf.msh",
+			//"patients/for-tyler/nnSurf.msh",
+			
+
+			/*
+			"patients/ch.msh",
+			"patients/mg.msh",
+			"patients/mg2.msh"
+			*/
+
+			/*
+			"patients/GAMBIT.CY.ch.msh",
+			"patients/GAMBIT.CY.mg2.msh",
+			"patients/GAMBIT.CY.nn.msh"
+			*/
+
 			//"patients/KevinBestV7.GAMBIT.msh",
-			"patients/CNSTest-1-00051.dat.mm",
-			//"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
+			//"patients/CNSTest-1-00051.dat.mm",
+			////"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
 			//"msh-hexahedral/Grant2-10-00001.dat.mm",
 			//"msh-hexahedral/CYcutBAv3.GAMBIT.msh",
-			//"msh-tetrahedral/FullCNSINJ_V1.GAMBIT.msh",
 			//"patients/bs/bs",
 			//"patients/ch/ch",
 			//"patients/ig/ig",
 			//"patients/kt/kt",
 			//"patients/mg/mg",
-			//"patients/nn/nn"
+			//"patients/nn/nn",
 
 			//"patients/MMPOST1_mc.stl",
-			//"patients/MMPost2_mc.stl"
+			//"patients/MMPost2_mc.stl",
 
-			//"IanArteries5.GAMBIT.msh",
+			//"msh-hexahedral/IanArteries5.GAMBIT.msh",
 
 			//"msh-tetrahedral/FullCNSINJ_V1.GAMBIT.msh",
 			//"msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.mm",
@@ -312,7 +378,7 @@ void debug_render_output( const std::string & targetPath )
 			mesh_chunk chunk;
 			chunk.num_tris = mesh.numTris;
 			chunk.tris.resize( chunk.num_tris );
-			for( int i = 0; i < chunk.num_tris; i++ )
+			for(int i = 0; i < chunk.num_tris; i++ )
 			{
 				auto & tri = chunk.tris[i];
 				tri.a = mesh.vertices[i * 3 + 0];

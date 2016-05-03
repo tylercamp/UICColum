@@ -132,6 +132,7 @@ void run_window( const cpu_triangle_array & tris )
 		glTranslatef( -ox, -oy, -oz );
 		glRotatef( 90.0f, 0.0f, 1.0f, 0.0f );
 		glRotatef( 45.0f, 1.0f, 0.0f, 0.0f );
+		glScalef( 50.0f, 50.0f, 50.0f );
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 

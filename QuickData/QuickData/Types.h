@@ -130,6 +130,8 @@ typedef array_view<int, 3> gpu_voxel_tag_data;
 
 struct voxel_matrix
 {
+	voxel * raw_voxel_store;
+
 	gpu_voxels * dev_voxels;
 	std::vector<gpu_voxel_tag_data *> dev_voxel_tag_data;
 	gpu_voxel_data * dev_voxel_data;
@@ -153,9 +155,9 @@ struct voxel_matrix
 		spatial_stride.y /= height;
 		spatial_stride.z /= depth;
 
-		dev_voxels = new array_view<voxel, 3>( res_width, res_height, res_depth );
+		dev_voxels = new array_view<voxel, 3>( res_width, res_height, res_depth, ( raw_voxel_store = new voxel[res_width * res_height * res_depth] ) );
 		auto & voxels = *dev_voxels;
-		voxels.discard_data( );
+		//voxels.discard_data( );
 
 		extent<3> matrixExtents( width, height, depth );
 
@@ -282,7 +284,8 @@ void segmented_parallel_for_each( array_view<T> data, Func func )
 		//	Synchronize occasionally for responsiveness
 		if( step % 10 == 0 )
 		{
-			data[0]; // access element to force synchronize ( calling data.synchronize() wouldn't work for some reason? )
+			concurrency::accelerator( concurrency::accelerator::default_accelerator ).default_view.flush( );
+			//data[0]; // access element to force synchronize ( calling data.synchronize() wouldn't work for some reason? )
 					 //Sleep( 1 );
 		}
 

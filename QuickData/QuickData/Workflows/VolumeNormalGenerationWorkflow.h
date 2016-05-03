@@ -58,7 +58,7 @@ struct volume_tetrahedral
 
 
 
-void gen_volume_normals_tetrahedral( gpu_triangle_array * tris, int numVolumes )
+void gen_volume_normals_tetrahedral( gpu_triangle_array * tris, std::size_t numVolumes )
 {
 
 	auto & mesh = *tris;
@@ -69,7 +69,7 @@ void gen_volume_normals_tetrahedral( gpu_triangle_array * tris, int numVolumes )
 	volumes.resize( numVolumes );
 
 	//	Organize into volumes
-	for( int i = 0; i < mesh.extent.size( ); i++ )
+	for( std::size_t i = 0; i < mesh.extent.size( ); i++ )
 	{
 		auto & tri = mesh[i];
 		auto & volume = volumes[tri.volumeIndex];
@@ -129,7 +129,7 @@ void gen_volume_normals_tetrahedral( gpu_triangle_array * tris, int numVolumes )
 	} );
 }
 
-void gen_volume_normals_hexahedral( gpu_triangle_array * tris, int numVolumes )
+void gen_volume_normals_hexahedral( gpu_triangle_array * tris, std::size_t numVolumes )
 {
 
 	auto & mesh = *tris;
@@ -139,10 +139,12 @@ void gen_volume_normals_hexahedral( gpu_triangle_array * tris, int numVolumes )
 	std::vector<volume_hexahedral> volumes;
 	volumes.resize( numVolumes );
 
+	
+
 	//	Organize into volumes
-	for( int i = 0; i < mesh.extent.size( ); i++ )
+	for( std::size_t i = 0; i < mesh.extent.size( ); i++ )
 	{
-		auto & tri = mesh[i];
+		auto tri = mesh[i];
 		auto & volume = volumes[tri.volumeIndex];
 		if( volume.numStored >= HEXAHEDRAL_VOLUME_MEMBER_COUNT )
 			__debugbreak( );
@@ -201,7 +203,7 @@ void gen_volume_normals_hexahedral( gpu_triangle_array * tris, int numVolumes )
 }
 
 //	Normals should be pointing out from center of volume, not guaranteed by direct normal from tri
-void workflow_gen_volume_normals( gpu_triangle_array * tris, int numVolumes, VolumeType volumeType )
+void workflow_gen_volume_normals( gpu_triangle_array * tris, std::size_t numVolumes, VolumeType volumeType )
 {
 	switch( volumeType )
 	{

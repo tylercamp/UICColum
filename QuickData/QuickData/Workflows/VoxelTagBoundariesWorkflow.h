@@ -3,7 +3,7 @@
 #include "../Types.h"
 
 //	V3
-/*
+
 void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chunk_array * chunked_mesh )
 {
 	if( !voxelmatrix->dev_voxels )
@@ -107,6 +107,7 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 	std::cout << "Done.\n";
 
 	concurrency::accelerator( concurrency::accelerator::default_accelerator ).default_view.flush( );
+	concurrency::accelerator( concurrency::accelerator::default_accelerator ).default_view.wait( );
 
 
 
@@ -136,11 +137,12 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 			for( int t = 0; t < numTris; t++ )
 			{
 				if( voxel.contains_point( tris[t].center ) )
-					voxel_tag_data[voxel_idx]++;
+					concurrency::atomic_fetch_inc(&voxel_tag_data[voxel_idx]);
 			}
 		} );
 
 		concurrency::accelerator( concurrency::accelerator::default_accelerator ).default_view.flush( );
+		concurrency::accelerator( concurrency::accelerator::default_accelerator ).default_view.wait( );
 
 		if( i % (int) ( chunked_mesh->size( ) * 0.04 ) == 0 ) // Update in ~4% increments
 		{
@@ -158,12 +160,12 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 	for( auto tris : chunked_mesh_tris )
 		delete tris;
 }
-*/
+
 
 //	V2
 
 
-
+/*
 void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chunk_array * chunked_mesh )
 {
 	if( !voxelmatrix->dev_voxels )
@@ -352,7 +354,7 @@ void workflow_tag_voxels_with_mesh_boundary( voxel_matrix * voxelmatrix, cpu_chu
 	for( auto tris : chunked_mesh_tris )
 		delete tris;
 }
-
+*/
 
 
 

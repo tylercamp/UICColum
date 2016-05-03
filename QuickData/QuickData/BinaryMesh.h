@@ -24,7 +24,7 @@ class BinaryMesh
 	{
 		*targetBuffer = new float_3[count];
 
-		for( int i = 0; i < count; i++ )
+		for( std::size_t i = 0; i < count; i++ )
 		{
 			float x, y, z;
 			source >> x;
@@ -37,7 +37,7 @@ class BinaryMesh
 
 	void WriteBufferTo( std::ostream & target, float_3 * buffer )
 	{
-		for( int i = 0; i < numTris * 3; i++ )
+		for( std::size_t i = 0; i < numTris * 3; i++ )
 		{
 			const auto & v = buffer[i];
 			target << v.x;

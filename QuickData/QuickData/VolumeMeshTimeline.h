@@ -5,6 +5,8 @@
 
 const int TIMELINE_FILE_START_TAG = 0x928154;
 
+const int VOLUME_DATA_START_TAG = 0xfe22ac;
+
 
 class VolumeMeshTimeline
 {
@@ -48,10 +50,11 @@ public:
 			NOT_YET_IMPLEMENTED( );
 
 		fwrite( &TIMELINE_FILE_START_TAG, sizeof( int ), 1, file );
-		fwrite( &numStates, sizeof( int ), 1, file );
 
 		for( auto state : states )
+		{
 			state->SaveTo( file );
+		}
 
 		fclose( file );
 	}

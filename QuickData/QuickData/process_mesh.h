@@ -95,23 +95,54 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 		gpu_index_array * surfaceIndices, * surfaceTags, * volumeIndices, * volumeTags;
 		VolumeType volumeType;
 
-		int numVolumes = workflow_import_msh( file, &points, &surfaceIndices, &surfaceTags, &volumeIndices, &volumeTags, &volumeType );
-		workflow_gen_tris( points, surfaceIndices, &tris );
-		workflow_gen_tris( points, volumeIndices, &volumeTris );
-		workflow_tag_mesh_volumes( volumeTris, volumeTags );
-		workflow_tag_mesh_volumes( tris, surfaceTags );
-		workflow_gen_normals( tris );
-		//workflow_gen_normals( volumeTris );
-		workflow_gen_volume_normals( volumeTris, numVolumes, volumeType );
+		std::size_t numVolumes = workflow_import_msh( file, &points, &surfaceIndices, &surfaceTags, &volumeIndices, &volumeTags, &volumeType );
 
-		delete points;
-		delete surfaceIndices, surfaceTags, volumeIndices, volumeTags;
+		//	Volume mesh
+		if( numVolumes > 0 )
+		{
+			/*
+			if( surfaceIndices )
+			{
+				workflow_gen_tris( points, surfaceIndices, &tris );
+				workflow_tag_mesh_volumes( tris, surfaceTags );
+				workflow_gen_normals( tris );
+
+				delete surfaceIndices;
+				delete surfaceTags;
+			}
+			*/
+
+			if( volumeIndices )
+			{
+				workflow_gen_tris( points, volumeIndices, &volumeTris );
+				workflow_tag_mesh_volumes( volumeTris, volumeTags );
+				workflow_gen_volume_normals( volumeTris, numVolumes, volumeType );
+
+				delete volumeIndices;
+				delete volumeTags;
+			}
+		}
+		//	Surface mesh
+		else
+		{
+			if( surfaceIndices )
+			{
+				workflow_gen_tris( points, surfaceIndices, &tris );
+				workflow_gen_normals( tris );
+
+				delete surfaceIndices;
+			}
+		}
+		
+		//workflow_gen_normals( volumeTris );
+
+		points ? delete points : 0;
 	}
 	
-	std::cout << "Surface mesh has " << tris->extent.size( ) << " tris" << std::endl;
+	if( tris ) std::cout << "Surface mesh has " << tris->extent.size( ) << " tris" << std::endl;
 	if( volumeTris ) std::cout << "Volume mesh has " << volumeTris->extent.size( ) << " tris" << std::endl;
 
-	//workflow_render_mesh( tris );
+	//if( tris ) workflow_render_mesh( tris );
 	//if( volumeTris ) workflow_render_mesh( volumeTris );
 
 
@@ -134,10 +165,13 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 
 	/*** PARTITION DATA ***/
 
-	cpu_chunk_array * chunks, * volumeChunks = nullptr;
-	std::cout << "Processing surface data" << std::endl;
-	generate_chunks( tris, &chunks );
-	std::cout << "Processing surface data DONE" << std::endl;
+	cpu_chunk_array * chunks = nullptr, * volumeChunks = nullptr;
+	if( tris )
+	{
+		std::cout << "Processing surface data" << std::endl;
+		generate_chunks( tris, &chunks );
+		std::cout << "Processing surface data DONE" << std::endl;
+	}
 	if( volumeTris )
 	{
 		std::cout << "Processing volume data" << std::endl;
@@ -153,14 +187,14 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 
 	CreateDirectoryA( getStoragePath( file ).c_str( ), nullptr );
 
-	workflow_chunk_export_binary( getStoragePath( file ) + "/surfaces", chunks );
+	if( chunks ) workflow_chunk_export_binary( getStoragePath( file ) + "/surfaces", chunks );
 	if( volumeChunks ) workflow_chunk_export_binary( getStoragePath( file ) + "/volumes", volumeChunks );
 
-	/*
+	
 	std::string partitionSchemeFile = "partitions.binmeshscheme";
-	workflow_export_partition_scheme( getStoragePath( file ) + "/surfaces/" + partitionSchemeFile, chunks );
+	if( chunks ) workflow_export_partition_scheme( getStoragePath( file ) + "/surfaces/" + partitionSchemeFile, chunks );
 	if( volumeChunks ) workflow_export_partition_scheme( getStoragePath( file ) + "/volumes/" + partitionSchemeFile, volumeChunks );
-	*/
+	
 
 
 

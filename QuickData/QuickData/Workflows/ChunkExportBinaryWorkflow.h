@@ -55,4 +55,6 @@ void workflow_chunk_export_binary( const std::string & targetFolder, cpu_chunk_a
 		auto & chunk = chunks->at( i );
 		save_chunk_binary( pathName.str( ), chunk );
 	}
+
+	std::cout << "Done." << std::endl;
 }

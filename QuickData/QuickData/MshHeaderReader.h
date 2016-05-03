@@ -131,14 +131,63 @@ class MshHeaderReader
 public:
 	std::vector<std::vector<double>> data;
 
+	MshHeaderReader( )
+	{
+
+	}
+
 	MshHeaderReader( const std::string & filepath )
 	{
 		Load( filepath );
 	}
 
+	//	Returns num bytes read
+	std::int64_t LoadPart( const std::string & filepath, std::int64_t readOffset, std::int64_t maxBuffer )
+	{
+		auto filesize = getFileSize( filepath );
+		auto fileavail = min( filesize - readOffset, maxBuffer );
+
+		FILE * file;
+		fopen_s( &file, filepath.c_str( ), "r" );
+		fseek( file, readOffset, SEEK_SET );
+
+		std::cout << "Loading file... ";
+		char * fileData = new char[fileavail];
+		fread( fileData, 1, fileavail, file );
+		fclose( file );
+		std::cout << "Done." << std::endl;
+
+		std::cout << "Preprocessing data... ";
+		std::vector<std::string> lines;
+		SplitLines( &lines, fileData, fileavail );
+		std::cout << "Done." << std::endl;
+
+		int lineOffset = 0;
+		while( lineOffset < lines.size( ) )
+		{
+			//	Ignore empty lines
+			if( removeWhitespace( lines[lineOffset] ).size( ) == 0 )
+			{
+				++lineOffset;
+				continue;
+			}
+
+			try
+			{
+				lineOffset += ParseNextList( lines, lineOffset );
+			}
+			catch( ... )
+			{
+				break;
+			}
+		}
+
+		fclose( file );
+	}
+
 	void Load( const std::string & filepath )
 	{
-		auto filesize = getFileSize( filepath );;
+		auto filesize = getFileSize( filepath );
 
 		FILE * file;
 		fopen_s( &file, filepath.c_str( ), "r" );
@@ -166,5 +215,7 @@ public:
 
 			offset += ParseNextList( lines, offset );
 		}
+
+		fclose( file );
 	}
 };

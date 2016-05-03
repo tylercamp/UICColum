@@ -24,6 +24,7 @@ void workflow_import_msh_header( const std::string & fileName, gpu_data_sequence
 	*out_timeStamps = resultTimestamps;
 }
 
+
 void workflow_import_msh_header_cpu( const std::string & fileName, cpu_data_sequence_array ** out_data, double ** out_timeStamps )
 {
 	MshHeaderReader reader( fileName );
@@ -39,4 +40,10 @@ void workflow_import_msh_header_cpu( const std::string & fileName, cpu_data_sequ
 
 	*out_data = resultData;
 	*out_timeStamps = resultTimestamps;
+}
+
+//	Returns num bytes read
+std::size_t workflow_import_msh_header_cpu_part( const std::string & fileName, std::size_t maxBytes, std::size_t offsetBytes, cpu_data_sequence_array ** out_data, double ** out_timeStamps )
+{
+	return -1;
 }

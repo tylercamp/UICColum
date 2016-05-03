@@ -4,15 +4,31 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <gdcm\gdcmReader.h>
+#include <gdcm\gdcmImageReader.h>
 #include "QuickData.Unity.h"
 
 #include "../QuickData/BinaryMesh.h"
 #include "../QuickData/VolumeMeshTimeline.h"
 
-#pragma comment( lib, "libfbxsdk.lib" )
 
+#pragma comment( lib, "gdcmCommon.lib" )
+#pragma comment( lib, "gdcmDSED.lib" )
+#pragma comment( lib, "gdcmzlib.lib" )
+#pragma comment( lib, "gdcmcharls.lib" )
+#pragma comment( lib, "gdcmDICT.lib" )
+#pragma comment( lib, "gdcmexpat.lib" )
+#pragma comment( lib, "gdcmgetopt.lib" )
+#pragma comment( lib, "gdcmIOD.lib" )
+#pragma comment( lib, "gdcmjpeg8.lib" )
+#pragma comment( lib, "gdcmjpeg12.lib" )
+#pragma comment( lib, "gdcmjpeg16.lib" )
+#pragma comment( lib, "gdcmMEXD.lib" )
+#pragma comment( lib, "gdcmMSFF.lib" )
+#pragma comment( lib, "gdcmopenjpeg.lib" )
+#pragma comment( lib, "socketxx.lib" )
 
-//	http://ericeastwood.com/blog/17/unity-and-dlls-c-managed-and-c-unmanaged
+#pragma comment( lib, "Ws2_32.lib" )
 
 
 
@@ -68,6 +84,69 @@ int main( )
 	//timeline.LoadFrom( "FullCNS_Drug_CellCenters_T1.dynamic.binvolumes" );
 
 	//std::cout << "Loaded " << meshSet->meshes.size( ) << " meshes" << std::endl;
+
+
+	//	512x512, 361 slices
+
+	gdcm::ImageReader reader;
+	reader.SetFileName( "dicom.dcm" );
+	std::cout << "canRead: " << reader.CanRead( ) << std::endl;
+	std::cout << "read: " << reader.Read( ) << std::endl;
+
+	auto & pixmap = reader.GetPixmap( );
+	auto & img = reader.GetImage( );
+	//img.
+
+	
+	
+	
+	auto & dataElement = img.GetDataElement( );
+	
+	int numDims = img.GetNumberOfDimensions( );
+	auto bufferLength = img.GetBufferLength( );
+
+	auto pixformat = img.GetPixelFormat( );
+	auto scalarType = pixformat.GetScalarType( );
+
+	auto numcolumns = img.GetColumns( );
+	auto numrows = img.GetRows( );
+	auto dims = img.GetDimensions( );
+	auto dim1 = dims[0];
+	auto dim2 = dims[1];
+	auto dim3 = dims[2];
+	
+	auto & header = reader.GetFile( ).GetHeader( );
+	auto & dataset = reader.GetFile( ).GetDataSet( );
+
+	
+	for( auto it = dataset.Begin( ); it != dataset.End( ); it++ )
+	{
+		const auto & val = *it;
+		auto asSequence = val.GetValueAsSQ( );
+		auto asValue = val.GetValue( );
+		const auto & length = val.GetLength( );
+		auto val = val.GetByteValue( );
+		auto vl = val.GetVL( );
+		auto vr = val.GetVR( );
+
+		switch( vr )
+		{
+			case( gdcm::VR::IS ) :
+				__debugbreak( );
+				break;
+			default:
+				break;
+		}
+	}
+
+	auto planeconfig = img.GetPlanarConfiguration( );
+
+	
+
+	auto spacings = img.GetSpacing( );
+	auto spacing1 = spacings[0];
+	auto spacing2 = spacings[1];
+	auto spacing3 = spacings[2];
 
 	std::cout << "Took " << (clock( ) - start) << "ms";
 

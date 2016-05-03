@@ -17,7 +17,12 @@ void workflow_tag_voxels_with_mesh_boundary_ref( voxel_matrix * voxelmatrix, cpu
 	auto stride = ( voxelmatrix->end - voxelmatrix->start ) / float_3( voxelmatrix->width, voxelmatrix->height, voxelmatrix->depth );
 	auto invStride = float_3( 1.0f ) / stride;
 
-	//	For every chunk
+	voxel * voxels_store = new voxel[voxelstack_dims.x * voxelstack_dims.y * voxelstack_dims.z];
+	gpu_voxels local( voxelmatrix->dev_voxels->extent, voxels_store );
+
+	voxelmatrix->dev_voxels->copy_to( local );
+
+	//	For every chunk, generate start/end-points
 	for( int i = 0; i < chunked_mesh->size( ); i++ )
 	{
 		auto & chunk = chunked_mesh->at( i );
@@ -62,7 +67,14 @@ void workflow_tag_voxels_with_mesh_boundary_ref( voxel_matrix * voxelmatrix, cpu
 			for( int z = 0; z < tagdata.extent[2]; z++ )
 				tagdata( x, y, z ) = 0;
 
-	for( int c = 0; c < chunked_mesh->size( ); c++ )
+	tagdata.synchronize( concurrency::access_type_read_write );
+
+	ThreadPool tp( 8 );
+	std::atomic_int numComplete;
+	numComplete.store( 0 );
+	int numJobs = 0;
+
+	for( int c = 0; c < 20; c++ )
 	{
 		auto voxel_range = chunk_voxel_overlap_end[c] - chunk_voxel_overlap_start[c] + 1;
 		if( voxel_range == int_3( 0 ) )
@@ -73,28 +85,41 @@ void workflow_tag_voxels_with_mesh_boundary_ref( voxel_matrix * voxelmatrix, cpu
 		{
 			for( int y = 0; y < voxel_range.y; y++ )
 			{
-				for( int z = 0; z < voxel_range.z; z++ )
+				++numJobs;
+				tp.enqueue( [=, &chunk_voxel_overlap_start, &numComplete, &local, &current_chunk, &tagdata]( int vx, int vy )
 				{
-					auto voxelIndex = int_3( x, y, z ) + chunk_voxel_overlap_start[c];
-					//auto voxelIndex = chunk_voxel_overlap_start[c] + int_3( x, y, z );
-					auto idx_voxel = index<3>( voxelIndex.x, voxelIndex.y, voxelIndex.z );
-
-					auto voxel = voxels( idx_voxel );
-					int numTags = 0;
-
-					for( int t = 0; t < current_chunk.num_tris; t++ )
+					//Sleep( 500 );
+					for( int z = 0; z < voxel_range.z; z++ )
 					{
-						auto tri = current_chunk.tris[t];
-						if( voxel.contains_point( tri.center ) )
-							++numTags;
+						auto voxelIndex = int_3( x, y, z ) + chunk_voxel_overlap_start[c];
+						auto idx_voxel = index<3>( voxelIndex.x, voxelIndex.y, voxelIndex.z );
+
+						auto voxel = local( idx_voxel );
+						int numTags = 0;
+
+						for( int t = 0; t < current_chunk.num_tris; t++ )
+						{
+							auto tri = current_chunk.tris[t];
+							if( voxel.contains_point( tri.center ) )
+								++numTags;
+						}
+
+						tagdata( idx_voxel ) += numTags;
 					}
 
-					tagdata( idx_voxel ) += numTags;
-				}
+					++numComplete;
+				}, x, y );
 			}
 		}
 
-		std::cout << "Completed chunk " << c + 1 << "/" << chunked_mesh->size( ) << std::endl;
+		//std::cout << "Completed chunk " << c + 1 << "/" << chunked_mesh->size( ) << std::endl;
+	}
+
+	while( numComplete < numJobs )
+	{
+		Sleep( 2000 );
+		float p = (float) numComplete / (float) numJobs;
+		std::cout << "Completed " << numComplete << " of " << numJobs << "(" << (int) ( p * 100 ) << "%)" << std::endl;
 	}
 
 	voxelmatrix->dev_voxel_tag_data.push_back( &tagdata );

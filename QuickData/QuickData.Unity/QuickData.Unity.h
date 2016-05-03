@@ -37,3 +37,4 @@ struct MeshDataset
 ParsedMeshStructure * LoadBinaryMesh( const char * targetPath );
 
 UNITY_NATIVE_EXPORT bool LoadMeshSet( const char * searchPath, const char * searchString );
+UNITY_NATIVE_EXPORT bool LoadVoxelMatrix( const char * storePath );
