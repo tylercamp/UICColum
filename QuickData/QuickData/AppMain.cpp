@@ -1,4 +1,26 @@
 
+
+
+/*
+
+	OUTLINE
+
+	Main application logic is handled via the process_mesh, process_voxel_states functions. These functions are invoked
+		from main() function after determining the file type.
+
+	main() function operates on a job queue, which can be passed as command-line arguments.
+
+	The process_* functions contain domain logic regarding the processing of assets. The actual work is deferred to
+		workflow_* functions.
+
+
+
+
+*/
+
+
+
+
 #define NOMINMAX
 
 #include <iostream>
