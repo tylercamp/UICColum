@@ -104,7 +104,7 @@ class MshHeaderReader
 
 		//	No more data
 		if( numVolumes < 0 )
-			return fileLines.size( ) - baseIndex;
+			return dataStartIndex - baseIndex;
 
 		std::vector<double> result;
 		result.resize( numVolumes );
@@ -120,7 +120,7 @@ class MshHeaderReader
 				break;
 			}
 
-			result[i - dataStartIndex] = ParseFloat( line );
+			result[i - dataStartIndex] = ParseFloat( line ) + 1.0f;
 		}
 
 		if( result.size( ) > 0 )
@@ -166,29 +166,40 @@ public:
 		SplitLines( &lines, fileData, fileavail );
 		std::cout << "Done." << std::endl;
 
+		std::size_t byteOffset = 0;
 		int lineOffset = 0;
 		while( lineOffset < lines.size( ) )
 		{
 			//	Ignore empty lines
 			if( removeWhitespace( lines[lineOffset] ).size( ) == 0 )
 			{
+				byteOffset += lines[lineOffset].size( ) + 2;
 				++lineOffset;
 				continue;
 			}
 
+			std::size_t lastOffset = lineOffset;
+			bool success = false;
 			try
 			{
 				lineOffset += ParseNextList( lines, lineOffset );
+				success = true;
 			}
 			catch( ... )
 			{
 				break;
 			}
+
+			if( success )
+			{
+				++lineOffset; // finished last line, move to next
+				for( std::size_t i = lastOffset; i < lineOffset; i++ )
+					byteOffset += lines[i].size( ) + 2;
+			}
 		}
 
 		delete[] fileData;
-		fclose( file );
-		return fileavail;
+		return byteOffset;
 	}
 
 	void Load( const std::string & filepath )

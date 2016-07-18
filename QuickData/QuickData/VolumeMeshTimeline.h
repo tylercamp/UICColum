@@ -63,13 +63,18 @@ public:
 		if( !file )
 			NOT_YET_IMPLEMENTED( );
 
+		fseek( file, 0, SEEK_END );
+		std::size_t size = ftell( file );
+		fseek( file, 0, SEEK_SET );
+
 		int readStartTag;
 		fread( &readStartTag, sizeof( int ), 1, file );
 		if( readStartTag != TIMELINE_FILE_START_TAG )
 			NOT_YET_IMPLEMENTED( );
 
-		while( !feof( file ) )
+		while( ftell( file ) < size )
 		{
+			std::size_t pos = ftell( file );
 			auto loadedState = new VolumeMeshState( );
 			loadedState->LoadFrom( file );
 			states.push_back( loadedState );

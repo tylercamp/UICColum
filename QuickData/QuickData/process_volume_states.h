@@ -4,7 +4,8 @@
 #include "Utilities.h"
 #include "Workflows/VolumeDataExportWorkflow.h"
 
-void process_volume_states( const std::string & sourceMeshHeader )
+
+void process_volume_states_largefile( const std::string & sourceMeshHeader )
 {
 	std::string fileExt = getFileExtension( sourceMeshHeader );
 
@@ -19,16 +20,17 @@ void process_volume_states( const std::string & sourceMeshHeader )
 	/*
 	//	Simple implementation
 	{
-		cpu_data_sequence_array * data;
-		double * timestamps;
+	cpu_data_sequence_array * data;
+	double * timestamps;
 
-		workflow_import_msh_header_cpu( sourceMeshHeader, &data, &timestamps );
-		workflow_volume_data_export( getStoragePath( sourceMeshHeader ) + ".binvolumes", data, timestamps );
+	workflow_import_msh_header_cpu( sourceMeshHeader, &data, &timestamps );
+	workflow_volume_data_export( getStoragePath( sourceMeshHeader ) + ".binvolumes", data, timestamps );
 	}
 	*/
 
 
-	
+
+
 	//	Iterative processing for large file
 	{
 		cpu_data_sequence_array * data;
@@ -67,7 +69,40 @@ void process_volume_states( const std::string & sourceMeshHeader )
 
 		fclose( outputFile );
 	}
-	
-	
+
+
+
 	std::cout << "Done." << std::endl;
+}
+
+void process_volume_states_simple( const std::string & sourceMeshHeader )
+{
+	std::string fileExt = getFileExtension( sourceMeshHeader );
+
+	//	Only supporting MSH Header .mm files
+	if( fileExt != "mm" )
+		NOT_YET_IMPLEMENTED( );
+
+	std::cout << "OPERATING ON " << sourceMeshHeader << std::endl;
+
+	std::int64_t fileSize = getFileSize( sourceMeshHeader );
+
+	//	Simple implementation
+	{
+		cpu_data_sequence_array * data;
+		double * timestamps;
+
+		workflow_import_msh_header_cpu( sourceMeshHeader, &data, &timestamps );
+		workflow_volume_data_export( getStoragePath( sourceMeshHeader ) + ".binvolumes", data, timestamps );
+	}
+
+	std::cout << "Done." << std::endl;
+}
+
+
+
+void process_volume_states( const std::string & sourceMeshHeader )
+{
+	process_volume_states_largefile( sourceMeshHeader );
+	//process_volume_states_simple( sourceMeshHeader );
 }

@@ -21,6 +21,13 @@ std::size_t workflow_import_msh( const std::string & fileName, gpu_vertex_array 
 	if( reader->PointData.size( ) > 1 )
 		__debugbreak( );
 
+	if( reader->PointData.size( ) == 0 )
+	{
+		std::cout << "Could not find point data in MSH file! Make sure your point lists are properly enclosed in parentheses!";
+		std::getchar( );
+		exit( 1 );
+	}
+
 	auto & pointData = reader->PointData[0];
 	for( std::size_t i = 0; i < pointData.count; i++ )
 	{

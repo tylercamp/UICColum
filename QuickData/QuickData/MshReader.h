@@ -71,19 +71,28 @@ class MshReader
 	{
 		auto start = clock( );
 
+		std::string effectiveText = text;
+		std::size_t msPos;
+		//	Collapse multi-spaces to single spaces
+		while( (msPos = effectiveText.find( "  " )) != effectiveText.npos )
+			effectiveText.replace( msPos, 2, " " );
+
 		std::vector<std::string> & result = *output;
 
 		std::size_t startIndex = 0;
-		for( std::size_t i = 0; i < text.length( ); i++ )
+		for( std::size_t i = 0; i < effectiveText.length( ); i++ )
 		{
-			if( text[i] != ' ' )
+			if( effectiveText[i] != ' ' )
 				continue;
 
 			std::string line;
-			line.assign( text.data( ) + startIndex, text.data( ) + i );
-			result.emplace_back( line );
+			line.assign( effectiveText.data( ) + startIndex, effectiveText.data( ) + i );
+			result.emplace_back( std::move( line ) );
 			startIndex = i + 1;
 		}
+
+		if( startIndex < effectiveText.length( ) )
+			result.push_back( effectiveText.substr( startIndex, effectiveText.size( ) - startIndex ) );
 
 		result.reserve( result.size( ) );
 	}
@@ -321,7 +330,7 @@ public:
 					std::vector<std::string> list;
 					int listStart = lineText.find_last_of( '(' ) + 1;
 					int listEnd = lineText.find_first_of( ')' );
-					SplitSpaces( &list, lineText.substr( listStart, listEnd ) );
+					SplitSpaces( &list, lineText.substr( listStart, listEnd - listStart ) );
 					VolumeCount = ParseHexInt( list[2] );
 					continue;
 				}
