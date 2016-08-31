@@ -12,5 +12,5 @@ Should build into ./bin .
 
 ### App Logic
 
-Typically uses procedural to represent complex operations in simple, contained functions. Anything regarding resource tracking is done with RAII.
+Typically uses C-style to represent complex operations in simple, contained functions. Anything regarding resource tracking is done with RAII.
 
