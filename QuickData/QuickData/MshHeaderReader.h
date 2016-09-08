@@ -12,12 +12,7 @@ class MshHeaderReader
 		return std::stoul( str, nullptr, 16 );
 	}
 
-	float ParseFloat( const std::string & str )
-	{
-		double result;
-		sscanf_s( str.c_str( ), "%lf", &result );
-		return result;
-	}
+
 
 
 
@@ -43,50 +38,58 @@ class MshHeaderReader
 		result.reserve( result.size( ) );
 	}
 
-	void SplitLines( std::vector<std::string> * output, const char * fileData, int length )
+	void SplitLines( std::vector<const char *> * output, const char * text, std::size_t length )
 	{
-		auto start = clock( );
+		const char * start = text;
+		const char * end = strchr( text, '\n' );
 
-		std::stringstream ss( fileData );
-		std::size_t offset = ss.tellg( );
+		output->reserve( length / 8 );
 
-		std::vector<std::string> & result = *output;
-		result.reserve( length / 3 ); // heuristic
+		std::size_t offset = 0;
 
-		std::string line;
-		while( offset < length && std::getline( ss, line, '\n' ) )
+		while( end && (end - text < length) )
 		{
-			result.push_back( line );
-			offset = ss.tellg( );
+			output->push_back( start );
+
+			start = end + 1;
+			end = strchr( start, '\n' );
 		}
 
-		result.reserve( result.size( ) );
+		offset = (std::size_t)(start - text);
+
+		output->push_back( start );
+
+		output->reserve( output->size( ) );
 	}
 
 	//	Returns offset into array
-	int ParseNextList( const std::vector<std::string> & fileLines, int baseIndex )
+	int ParseNextList( const std::vector<const char *> & fileLines, int baseIndex )
 	{
 		//	# of volumes (declared in-file)
 		int numVolumes = -1;
 
+		std::string as_str;
+		as_str.reserve( 20 );
+
 		//	Find volume data start
 		int dataStartIndex;
-		for( dataStartIndex = baseIndex; dataStartIndex < fileLines.size( ); dataStartIndex++ )
+		for( dataStartIndex = baseIndex; dataStartIndex < fileLines.size( ) - 1; dataStartIndex++ )
 		{
 			int i = dataStartIndex;
 
+			as_str.assign( fileLines[i], fileLines[i + 1] - fileLines[i] - 1 );
+
 			//	Looking for something like '(12(...)('
-			if( fileLines[i].find( "(12" ) == 0 && fileLines[i].back( ) == '(' )
+			if( as_str.find( "(12" ) == 0 && as_str.back( ) == '(' )
 			{
 				//	Extract data bounds from data list declaration (get numVolumes)
 
-				std::string line = fileLines[i];
 				//	# of volumes held in inner parentheses, after '(12('
 				int innerParenthesesStart = 4;
-				int innerParenthesesEnd = line.find_first_of( ')' );
+				int innerParenthesesEnd = as_str.find_first_of( ')' );
 
 				std::vector<std::string> dataDef;
-				SplitSpaces( &dataDef, line.substr( innerParenthesesStart, innerParenthesesEnd - innerParenthesesStart ) );
+				SplitSpaces( &dataDef, as_str.substr( innerParenthesesStart, innerParenthesesEnd - innerParenthesesStart ) );
 
 				int firstVolumeIndex = ParseHexInt( dataDef[1] );
 				int lastVolumeIndex = ParseHexInt( dataDef[2] );
@@ -98,35 +101,35 @@ class MshHeaderReader
 			}
 		}
 
-		if( dataStartIndex < 0 )
-			//	Invalid file (or just new format?)
+		if( dataStartIndex < 0 || numVolumes < 0 )
+			//	Couldn't find any start point, no lines read
 			return 0;
 
-		//	No more data
-		if( numVolumes < 0 )
-			return dataStartIndex - baseIndex;
-
 		std::vector<double> result;
-		result.resize( numVolumes );
+		result.reserve( numVolumes );
 
 		int lastLine = dataStartIndex;
 		//	Gather data until we reach a closing parenthesis
-		for( int i = dataStartIndex; i < fileLines.size( ); i++ )
+		for( int i = dataStartIndex; i < fileLines.size( ) - 1; i++ )
 		{
-			const auto & line = fileLines[i];
-			if( line[0] == ')' )
+			if( *(fileLines[i]) == ')' )
 			{
 				lastLine = i;
 				break;
 			}
 
-			result[i - dataStartIndex] = ParseFloat( line ) + 1.0f;
+			result.push_back( strtod( fileLines[i], nullptr ) );
 		}
 
-		if( result.size( ) > 0 )
+		if( result.size( ) == numVolumes )
 		{
 			data.emplace_back( std::move( result ) );
 			std::cout << "Loaded store " << data.size( ) << std::endl;
+		}
+		else
+		{
+			//	Should only happen if we reach the end of a file before finishing a list
+			return 0;
 		}
 
 		return lastLine - baseIndex;
@@ -148,32 +151,32 @@ public:
 	//	Returns num bytes read
 	std::int64_t LoadPart( const std::string & filepath, std::int64_t readOffset, std::int64_t maxBuffer )
 	{
-		auto filesize = getFileSize( filepath );
+		auto filesize = getTextFileSize( filepath );
 		auto fileavail = min( filesize - readOffset, maxBuffer );
 
 		FILE * file;
 		fopen_s( &file, filepath.c_str( ), "r" );
-		fseek( file, readOffset, SEEK_SET );
+		_fseeki64( file, readOffset, SEEK_SET );
 
 		std::cout << "Loading file... ";
-		char * fileData = new char[fileavail];
+		char * fileData = new char[fileavail + 1];
 		fread( fileData, 1, fileavail, file );
 		fclose( file );
+		fileData[fileavail] = 0;
 		std::cout << "Done." << std::endl;
 
 		std::cout << "Preprocessing data... ";
-		std::vector<std::string> lines;
+		std::vector<const char *> lines;
 		SplitLines( &lines, fileData, fileavail );
 		std::cout << "Done." << std::endl;
 
-		std::size_t byteOffset = 0;
 		int lineOffset = 0;
-		while( lineOffset < lines.size( ) )
+		while( lineOffset < lines.size( ) - 1 )
 		{
+			std::string as_str( lines[lineOffset], lines[lineOffset + 1] - lines[lineOffset] - 1 );
 			//	Ignore empty lines
-			if( removeWhitespace( lines[lineOffset] ).size( ) == 0 )
+			if( removeWhitespace( as_str ).size( ) == 0 )
 			{
-				byteOffset += lines[lineOffset].size( ) + 2;
 				++lineOffset;
 				continue;
 			}
@@ -182,7 +185,11 @@ public:
 			bool success = false;
 			try
 			{
-				lineOffset += ParseNextList( lines, lineOffset );
+				int numLines = ParseNextList( lines, lineOffset );
+				if( numLines == 0 )
+					break;
+
+				lineOffset += numLines;
 				success = true;
 			}
 			catch( ... )
@@ -193,18 +200,26 @@ public:
 			if( success )
 			{
 				++lineOffset; // finished last line, move to next
-				for( std::size_t i = lastOffset; i < lineOffset; i++ )
-					byteOffset += lines[i].size( ) + 2;
 			}
 		}
 
+		std::size_t byteOffset = lines[lineOffset] - fileData + lineOffset + 1; // add lineOffset to account for extra carriage return characters
+
+		std::cout << "Done loading stores." << std::endl;
+		std::cout << "Freeing memory... ";
+
 		delete[] fileData;
+		lines.clear( );
+		lines.reserve( 1 );
+
+		std::cout << "Done." << std::endl;
+
 		return byteOffset;
 	}
 
 	void Load( const std::string & filepath )
 	{
-		auto filesize = getFileSize( filepath );
+		auto filesize = getTextFileSize( filepath );
 
 		FILE * file;
 		fopen_s( &file, filepath.c_str( ), "r" );
@@ -216,15 +231,17 @@ public:
 		std::cout << "Done." << std::endl;
 
 		std::cout << "Preprocessing data... ";
-		std::vector<std::string> lines;
+		std::vector<const char *> lines;
 		SplitLines( &lines, fileData, filesize );
 		std::cout << "Done." << std::endl;
 
 		int offset = 0;
-		while( offset < lines.size( ) )
+		while( offset < lines.size( ) - 1 )
 		{
+			std::string as_str( lines[offset], lines[offset + 1] - lines[offset] - 1 );
+
 			//	Ignore empty lines
-			if( removeWhitespace( lines[offset] ).size( ) == 0 )
+			if( removeWhitespace( as_str ).size( ) == 0 )
 			{
 				++offset;
 				continue;
@@ -232,6 +249,8 @@ public:
 
 			offset += ParseNextList( lines, offset );
 		}
+
+		delete[] fileData;
 
 		fclose( file );
 	}

@@ -5,16 +5,13 @@
 
 	OUTLINE
 
-	Main application logic is handled via the process_mesh, process_voxel_states functions. These functions are invoked
+	Main application logic is handled via the process_* functions. These functions are invoked
 		from main() function after determining the file type.
 
 	main() function operates on a job queue, which can be passed as command-line arguments.
 
 	The process_* functions contain domain logic regarding the processing of assets. The actual work is deferred to
 		workflow_* functions.
-
-
-
 
 */
 
@@ -58,15 +55,6 @@
 
 
 
-
-bool fileExists( const std::string & filename )
-{
-	FILE * f = fopen( filename.c_str( ), "rb" );
-	bool exists = (f != nullptr);
-	if( exists )
-		fclose( f );
-	return exists;
-}
 
 void try_process_mesh( const std::string & filename, ExportMode exportMode, bool invertNormals )
 {
@@ -126,7 +114,7 @@ int main( int argc, char * argv[] )
 	
 	
 	//	VOXEL MATRIX TAGGING (NOT USED FOR CONVERSION OPS)
-#if false
+#if 0
 	
 	//std::string prefix = "C:/Users/algor/Desktop/UIC/";
 	std::string prefix = "";
@@ -311,9 +299,9 @@ int main( int argc, char * argv[] )
 			*/
 
 			//"patients/KevinBestV7.GAMBIT.msh",
-			"patients/CNSTest-1-00051.dat.mm",
+			//"patients/CNSTest-1-00051.dat.mm",
 			//"patients/KK.msh",
-			//"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
+			"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
 			//"msh-hexahedral/Grant2-10-00001.dat.mm",
 			//"msh-hexahedral/CYcutBAv3.GAMBIT.msh",
 			//"patients/bs/bs",

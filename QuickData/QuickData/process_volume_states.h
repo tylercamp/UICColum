@@ -15,7 +15,7 @@ void process_volume_states_largefile( const std::string & sourceMeshHeader )
 
 	std::cout << "OPERATING ON " << sourceMeshHeader << std::endl;
 
-	std::int64_t fileSize = getFileSize( sourceMeshHeader );
+	std::int64_t fileSize = getTextFileSize( sourceMeshHeader );
 
 	/*
 	//	Simple implementation
@@ -40,9 +40,12 @@ void process_volume_states_largefile( const std::string & sourceMeshHeader )
 
 		std::string targetFile = getStoragePath( sourceMeshHeader ) + ".binvolumes";
 
+		if( fileExists( targetFile ) )
+			DeleteFileA( targetFile.c_str( ) );
+
 		std::int64_t offset = 0;
 		std::int64_t chunkSize;
-		int maxSize = 128 * 1024 * 1024; // 128MB, the max size of data read at a time - actual runtime mem usage much larger (ie 2GB)
+		int maxSize = 1024 * 1024 * 1024; // 1GB, the max size of data read and process at a time
 		int i = 0;
 		do
 		{
@@ -84,8 +87,6 @@ void process_volume_states_simple( const std::string & sourceMeshHeader )
 		NOT_YET_IMPLEMENTED( );
 
 	std::cout << "OPERATING ON " << sourceMeshHeader << std::endl;
-
-	std::int64_t fileSize = getFileSize( sourceMeshHeader );
 
 	//	Simple implementation
 	{

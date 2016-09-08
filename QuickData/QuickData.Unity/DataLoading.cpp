@@ -4,32 +4,10 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <gdcm\gdcmReader.h>
-#include <gdcm\gdcmImageReader.h>
 #include "QuickData.Unity.h"
 
 #include "../QuickData/BinaryMesh.h"
 #include "../QuickData/VolumeMeshTimeline.h"
-
-
-#pragma comment( lib, "gdcmCommon.lib" )
-#pragma comment( lib, "gdcmDSED.lib" )
-#pragma comment( lib, "gdcmzlib.lib" )
-#pragma comment( lib, "gdcmcharls.lib" )
-#pragma comment( lib, "gdcmDICT.lib" )
-#pragma comment( lib, "gdcmexpat.lib" )
-#pragma comment( lib, "gdcmgetopt.lib" )
-#pragma comment( lib, "gdcmIOD.lib" )
-#pragma comment( lib, "gdcmjpeg8.lib" )
-#pragma comment( lib, "gdcmjpeg12.lib" )
-#pragma comment( lib, "gdcmjpeg16.lib" )
-#pragma comment( lib, "gdcmMEXD.lib" )
-#pragma comment( lib, "gdcmMSFF.lib" )
-#pragma comment( lib, "gdcmopenjpeg.lib" )
-#pragma comment( lib, "socketxx.lib" )
-
-#pragma comment( lib, "Ws2_32.lib" )
-
 
 
 
@@ -57,6 +35,37 @@ ParsedMeshStructure * LoadBinaryMesh( const char * targetPath )
 }
 
 
+void CompareTimelines( const VolumeMeshTimeline & ref, const VolumeMeshTimeline & timeline )
+{
+	if( timeline.states.size( ) != ref.states.size( ) )
+	{
+		std::cout << "Timeline does not match ref! Ref has " << ref.states.size( ) << " states, timeline has " << timeline.states.size( ) << std::endl;
+		//return;
+	}
+
+	for( int s = 0; s < ref.states.size( ) && s < timeline.states.size( ); s++ )
+	{
+		auto refState = ref.states[s];
+		auto state = timeline.states[s];
+
+		for( int i = 0; i < refState->numVolumes; i++ )
+		{
+			for( int d = 0; d < refState->numDimensions; d++ )
+			{
+				auto refVal = refState->dataStore[i * refState->numDimensions + d];
+				auto val = state->dataStore[i * refState->numDimensions + d];
+
+				if( refVal != val )
+				{
+					std::cout << "Inconsistency! Data element " << i << " on dimension " << d << " in state " << s << " mismatched! expected: " << refVal << ", got: " << val << std::endl;
+					//return;
+				}
+			}
+		}
+	}
+	
+	std::cout << "Timelines match!" << std::endl;
+}
 
 
 
@@ -80,78 +89,21 @@ int main( )
 	//LoadMeshSet( "MESHES\\IanArteries5.GAMBIT\\surfaces\\", "*.binmesh" );
 	//LoadMeshSet( "../FbxPartitioning/patients/bs/bsCSF/surfaces/", "*.binmesh" );
 
-	//VolumeMeshTimeline timeline;
+	VolumeMeshTimeline timeline;
 	//timeline.LoadFrom( "FullCNS_Drug_CellCenters_T1.dynamic.binvolumes" );
+	//timeline.LoadFrom( "CNSTest-1-00051.dat.binvolumes" );
+	timeline.LoadFrom( "../QuickData/patients/KevinBestV7_ForGrant-11-2.0501.dat.binvolumes" );
+
+	VolumeMeshTimeline timeline2;
+	//timeline2.LoadFrom( "CNSTest-1-00051.dat - Copy.binvolumes" );
+	timeline2.LoadFrom( "../QuickData/patients/CORRECT REF KevinBestV7_ForGrant-11-2.0501.dat.binvolumes" );
+
+	CompareTimelines( timeline2, timeline );
 
 	//std::cout << "Loaded " << meshSet->meshes.size( ) << " meshes" << std::endl;
 
+	std::getchar( );
 
-	//	512x512, 361 slices
-
-	gdcm::ImageReader reader;
-	reader.SetFileName( "dicom.dcm" );
-	std::cout << "canRead: " << reader.CanRead( ) << std::endl;
-	std::cout << "read: " << reader.Read( ) << std::endl;
-
-	auto & pixmap = reader.GetPixmap( );
-	auto & img = reader.GetImage( );
-	//img.
-
-	
-	
-	
-	auto & dataElement = img.GetDataElement( );
-	
-	int numDims = img.GetNumberOfDimensions( );
-	auto bufferLength = img.GetBufferLength( );
-
-	auto pixformat = img.GetPixelFormat( );
-	auto scalarType = pixformat.GetScalarType( );
-
-	auto numcolumns = img.GetColumns( );
-	auto numrows = img.GetRows( );
-	auto dims = img.GetDimensions( );
-	auto dim1 = dims[0];
-	auto dim2 = dims[1];
-	auto dim3 = dims[2];
-	
-	auto & header = reader.GetFile( ).GetHeader( );
-	auto & dataset = reader.GetFile( ).GetDataSet( );
-
-	
-	for( auto it = dataset.Begin( ); it != dataset.End( ); it++ )
-	{
-		const auto & val = *it;
-		auto asSequence = val.GetValueAsSQ( );
-		auto asValue = val.GetValue( );
-		const auto & length = val.GetLength( );
-		auto val = val.GetByteValue( );
-		auto vl = val.GetVL( );
-		auto vr = val.GetVR( );
-
-		switch( vr )
-		{
-			case( gdcm::VR::IS ) :
-				__debugbreak( );
-				break;
-			default:
-				break;
-		}
-	}
-
-	auto planeconfig = img.GetPlanarConfiguration( );
-
-	
-
-	auto spacings = img.GetSpacing( );
-	auto spacing1 = spacings[0];
-	auto spacing2 = spacings[1];
-	auto spacing3 = spacings[2];
-
-	std::cout << "Took " << (clock( ) - start) << "ms";
-
-	std::string j;
-	std::getline( std::cin, j );
 
 	return 0;
 }

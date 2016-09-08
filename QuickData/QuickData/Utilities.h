@@ -8,11 +8,21 @@
 #include <algorithm> 
 #include <functional>
 #include <cctype>
+#include <cstdint>
+
+#include "Types.h"
+
+#ifdef max
+# undef max
+#endif
+#ifdef min
+# undef min
+#endif
 
 /* Utility functions */
 
-template <typename l, typename r>
-inline l max( l left, r right ) restrict( cpu, amp )
+template <typename L, typename R>
+inline L max( L left, R right ) restrict( cpu, amp )
 {
 	return left > right ? left : right;
 }
@@ -39,14 +49,14 @@ inline int_3 max<int_3, int_3>( int_3 left, int_3 right ) restrict( cpu, amp )
 		);
 }
 
-template <typename l, typename r>
-inline l min( l left, r right ) restrict( amp )
+template <typename L, typename R>
+inline L min( L left, R right ) restrict( amp )
 {
 	return left < right ? left : right;
 }
 
-template <typename l, typename r>
-inline l min( l left, r right )
+template <typename L, typename R>
+inline L min( L left, R right )
 {
 	return left < right ? left : right;
 }
@@ -165,6 +175,15 @@ std::string formatTime( long ms )
 	return result.str( );
 }
 
+bool fileExists( const std::string & filename )
+{
+	FILE * f = fopen( filename.c_str( ), "rb" );
+	bool exists = (f != nullptr);
+	if( exists )
+		fclose( f );
+	return exists;
+}
+
 std::uint64_t getFileSize( std::string name )
 {
 	//	http://stackoverflow.com/questions/8991192/check-filesize-without-opening-file-in-c
@@ -183,6 +202,17 @@ std::uint64_t getFileSize( std::string name )
 
 	CloseHandle( hFile );
 	return size.QuadPart;
+}
+
+std::uint64_t getTextFileSize( std::string name )
+{
+	//	Getting the size of the text buffer for the file
+	FILE * f = fopen( name.c_str( ), "r" );
+	_fseeki64( f, 0, SEEK_END );
+	std::uint64_t size = _ftelli64( f );
+	fclose( f );
+
+	return size;
 }
 
 bool directoryExists( const std::string & path )
