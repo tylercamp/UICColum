@@ -4,6 +4,8 @@
 #include <fstream>
 #include <vector>
 
+#include "Utilities.h"
+
 struct MshPoint
 {
 	float data[3];
