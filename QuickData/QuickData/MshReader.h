@@ -99,30 +99,28 @@ class MshReader
 		result.reserve( result.size( ) );
 	}
 
-
-
-	std::vector<std::string> GenerateLines( const char * fileData, std::size_t length )
+	void SplitLines( std::vector<const char *> * output, const char * text, std::size_t length )
 	{
-		auto start = clock( );
+		const char * start = text;
+		const char * end = strchr( text, '\n' );
 
-		std::vector<std::string> result;
-		result.reserve( length / 3 ); // heuristic
+		output->reserve( length / 8 );
 
-		std::size_t startIndex = 0;
-		for( std::size_t i = 0; i < length; i++ )
+		std::size_t offset = 0;
+
+		while( end && (end - text < length) )
 		{
-			if( fileData[i] != '\r' && fileData[i] != '\n' )
-				continue;
+			output->push_back( start );
 
-			std::string line;
-			line.assign( fileData + startIndex, fileData + i );
-			line = trim( line );
-			result.emplace_back( line );
-			startIndex = i + 1;
+			start = end + 1;
+			end = strchr( start, '\n' );
 		}
 
-		result.reserve( result.size( ) );
-		return result;
+		offset = (std::size_t)(start - text);
+
+		output->push_back( start );
+
+		output->reserve( output->size( ) );
 	}
 
 public:
@@ -172,20 +170,24 @@ public:
 
 		parseMode = None;
 		std::cout << "Preprocessing data... ";
-		auto lines = GenerateLines( fileData, length );
+		std::vector<const char *> lines;
+		SplitLines( &lines, fileData, length );
 		std::cout << "done." << std::endl;
 
-		for( std::size_t line = 0; line < lines.size( ); line++ )
+		std::string as_str;
+		as_str.reserve( 20 );
+
+		for( std::size_t line = 0; line < lines.size( ) - 1; line++ )
 		{
 			//auto lineStart = lines[line];
-			auto lineText = lines[line];
+			as_str.assign( lines[line], lines[line + 1] - lines[line] - 1 );
 
 			switch( parseMode )
 			{
 
 			case(Points) :
 			{
-				if( lineText[0] == ')' )
+				if( as_str[0] == ')' )
 				{
 					std::cout << "done." << std::endl;
 					PointData.back( ).count = PointData.back( ).data.size( );
@@ -196,20 +198,20 @@ public:
 				int numData = 0;
 				MshPoint pt;
 
-				for( int startIndex = lineText.find_first_not_of(' '); startIndex < lineText.size( ); )
+				for( int startIndex = as_str.find_first_not_of(' '); startIndex < as_str.size( ); )
 				{
-					int spaceIdx = lineText.find( ' ', startIndex );
-					if( spaceIdx == lineText.npos )
+					int spaceIdx = as_str.find( ' ', startIndex );
+					if( spaceIdx == as_str.npos )
 					{
-						pt.data[numData++] = ParseFloat( lineText.substr( startIndex ) );
-						startIndex = lineText.size( );
+						pt.data[numData++] = ParseFloat( as_str.substr( startIndex ) );
+						startIndex = as_str.size( );
 					}
 					else
 					{
-						auto val = lineText.substr( startIndex, spaceIdx - startIndex );
+						auto val = as_str.substr( startIndex, spaceIdx - startIndex );
 						pt.data[numData++] = ParseFloat( val );
-						int nextStart = lineText.find_first_not_of( ' ', spaceIdx );
-						startIndex = nextStart != lineText.npos ? nextStart : lineText.size();
+						int nextStart = as_str.find_first_not_of( ' ', spaceIdx );
+						startIndex = nextStart != as_str.npos ? nextStart : as_str.size( );
 					}
 				}
 
@@ -242,7 +244,7 @@ public:
 
 			case(Faces) :
 			{
-				if( lineText[0] == ')' )
+				if( as_str[0] == ')' )
 				{
 					std::cout << "done." << std::endl;
 					FaceData.back( ).count = FaceData.back( ).data.size( );
@@ -253,18 +255,18 @@ public:
 				int startIndex = -1;
 				int numData = 0;
 				MshFace face;
-				for( std::size_t startIndex = lineText.find_first_not_of(' '); startIndex < lineText.size( ); )
+				for( std::size_t startIndex = as_str.find_first_not_of( ' ' ); startIndex < as_str.size( ); )
 				{
-					int spaceIdx = lineText.find( ' ', startIndex );
-					if( spaceIdx == lineText.npos )
+					int spaceIdx = as_str.find( ' ', startIndex );
+					if( spaceIdx == as_str.npos )
 					{
-						auto val = lineText.substr( startIndex );
+						auto val = as_str.substr( startIndex );
 						face.point_indices[numData++ - 1] = ParseHexInt( val );
-						startIndex = lineText.size( );
+						startIndex = as_str.size( );
 					}
 					else
 					{
-						auto val = lineText.substr( startIndex, spaceIdx - startIndex );
+						auto val = as_str.substr( startIndex, spaceIdx - startIndex );
 						std::size_t idx = ParseHexInt( val );
 
 						if( numData == 0 ) {
@@ -276,8 +278,8 @@ public:
 						}
 
 
-						int nextStart = lineText.find_first_not_of( ' ', spaceIdx );
-						startIndex = nextStart != lineText.npos ? nextStart : lineText.size( );
+						int nextStart = as_str.find_first_not_of( ' ', spaceIdx );
+						startIndex = nextStart != as_str.npos ? nextStart : as_str.size( );
 					}
 				}
 
@@ -320,26 +322,26 @@ public:
 
 			case(None) :
 			{
-				const auto nextLine = line + 1 == lines.size( ) ? "" : lines[line + 1];
+				const auto nextLine = line + 2 == lines.size( ) ? "" : std::string( lines[line + 1], lines[line + 2] - lines[line + 1] - 1 );
 
-				if( lineText[0] != '(' )
+				if( as_str[0] != '(' )
 					continue;
 
-				int listType = ParseInt( lineText.substr( 1, lineText.find( ' ' ) ) );
+				int listType = ParseInt( as_str.substr( 1, as_str.find( ' ' ) ) );
 				if( listType == 12 ) // volumes declaration
 				{
 					std::cout << "Reading volume count...\n";
 					std::vector<std::string> list;
-					int listStart = lineText.find_last_of( '(' ) + 1;
-					int listEnd = lineText.find_first_of( ')' );
-					SplitSpaces( &list, lineText.substr( listStart, listEnd - listStart ) );
+					int listStart = as_str.find_last_of( '(' ) + 1;
+					int listEnd = as_str.find_first_of( ')' );
+					SplitSpaces( &list, as_str.substr( listStart, listEnd - listStart ) );
 					VolumeCount = ParseHexInt( list[2] );
 					continue;
 				}
 
 
-				int numOpenParen = std::count( lineText.begin( ), lineText.end( ), '(' );
-				int numCloseParen = std::count( lineText.begin( ), lineText.end( ), ')' );
+				int numOpenParen = std::count( as_str.begin( ), as_str.end( ), '(' );
+				int numCloseParen = std::count( as_str.begin( ), as_str.end( ), ')' );
 
 				int nextNumOpenParen = std::count( nextLine.begin( ), nextLine.end( ), '(' );
 				int nextNumCloseParen = std::count( nextLine.begin( ), nextLine.end( ), ')' );

@@ -13,6 +13,10 @@
 	The process_* functions contain domain logic regarding the processing of assets. The actual work is deferred to
 		workflow_* functions.
 
+
+
+	Main pipeline entry logic starts at line ~270, ends at line ~350
+
 */
 
 
@@ -269,56 +273,50 @@ int main( int argc, char * argv[] )
 	if( jobList.size( ) == 0 )
 	{
 		jobList = {
-			//
-			//"patients/for-tyler/GAMBIT.CY.ch.msh", // success!
-			//"patients/for-tyler/GAMBIT.CY.ig.msh", // success!
-			////"patients/for-tyler/GAMBIT.CY.kt.msh", // fail! (formatting!)
-			////"patients/for-tyler/GAMBIT.CY.mg2.msh", // fail! (formatting!)
-			//"patients/for-tyler/GAMBIT.CY.nn.msh", // success! (previous failure likely due to incorrect point parsing)
+			
+			"patients/for-tyler/GAMBIT.CY.ch.msh", // success!
+			"patients/for-tyler/GAMBIT.CY.ig.msh", // success!
+			//"patients/for-tyler/GAMBIT.CY.kt.msh", // fail! (formatting!)
+			//"patients/for-tyler/GAMBIT.CY.mg2.msh", // fail! (formatting!)
+			"patients/for-tyler/GAMBIT.CY.nn.msh", // success! (previous failure likely due to incorrect point parsing)
 			//"patients/for-tyler/GAMBIT.CY.ben.msh", // fail gen_volume_normals!
 
-			////	success!
-			//"patients/for-tyler/bsSurf.msh",
-			//"patients/for-tyler/chSurf.msh",
-			//"patients/for-tyler/igSurf.msh",
-			//"patients/for-tyler/ktSurf.msh",
-			//"patients/for-tyler/mgSurf.msh",
-			//"patients/for-tyler/nnSurf.msh",
-			
 
-			/*
-			"patients/ch.msh",
-			"patients/mg.msh",
-			"patients/mg2.msh"
-			*/
+			"patients/for-tyler/bsSurf.msh",
+			"patients/for-tyler/chSurf.msh",
+			"patients/for-tyler/igSurf.msh",
+			"patients/for-tyler/ktSurf.msh",
+			"patients/for-tyler/mgSurf.msh",
+			"patients/for-tyler/nnSurf.msh",
 
-			/*
-			"patients/GAMBIT.CY.ch.msh",
-			"patients/GAMBIT.CY.mg2.msh",
-			"patients/GAMBIT.CY.nn.msh"
-			*/
 
-			//"patients/KevinBestV7.GAMBIT.msh",
-			//"patients/CNSTest-1-00051.dat.mm",
-			//"patients/KK.msh",
+			"patients/KevinBestV7.GAMBIT.msh",
+			"patients/CNSTest-1-00051.dat.mm",
+			"patients/KK.msh",
 			"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
-			//"msh-hexahedral/Grant2-10-00001.dat.mm",
-			//"msh-hexahedral/CYcutBAv3.GAMBIT.msh",
-			//"patients/bs/bs",
-			//"patients/ch/ch",
-			//"patients/ig/ig",
-			//"patients/kt/kt",
-			//"patients/mg/mg",
-			//"patients/nn/nn",
+			"msh-hexahedral/Grant2-10-00001.dat.mm",
+			"msh-hexahedral/CYcutBAv3.GAMBIT.msh",
+			"patients/bs/bs",
+			"patients/ch/ch",
+			"patients/ig/ig",
+			"patients/kt/kt",
+			"patients/mg/mg",
+			"patients/nn/nn",
 
-			//"patients/MMPOST1_mc.stl",
-			//"patients/MMPost2_mc.stl",
+			"patients/MMPOST1_mc.stl",
+			"patients/MMPost2_mc.stl",
 
-			//"msh-hexahedral/IanArteries5.GAMBIT.msh",
+			"msh-hexahedral/IanArteries5.GAMBIT.msh",
 
-			//"msh-tetrahedral/FullCNSINJ_V1.GAMBIT.msh",
-			//"msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.mm",
+			"msh-tetrahedral/FullCNSINJ_V1.GAMBIT.msh",
+			"msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.mm",
 		};
+	}
+
+	for( auto file : jobList )
+	{
+		if( !fileExists( file ) && !directoryExists( file ) )
+			std::cerr << "Item does not exist: " << file << "\n";
 	}
 
 	for( auto job : jobList )

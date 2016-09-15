@@ -121,8 +121,11 @@ class MshHeaderReader
 			result.push_back( strtod( fileLines[i], nullptr ) );
 		}
 
-		if( result.size( ) == numVolumes )
+		//	If we completed a full list
+		if( lastLine != dataStartIndex )
 		{
+			if( result.size( ) != numVolumes )
+				std::cout << "Warning: Volume count mismatch in frame " << data.size( ) + 1 << ", expected " << numVolumes << ", got " << result.size( ) << std::endl;
 			data.emplace_back( std::move( result ) );
 			std::cout << "Loaded store " << data.size( ) << std::endl;
 		}
@@ -171,7 +174,7 @@ public:
 		std::cout << "Done." << std::endl;
 
 		int lineOffset = 0;
-		while( lineOffset < lines.size( ) - 1 )
+		while( lineOffset < lines.size( ) - 2 )
 		{
 			std::string as_str( lines[lineOffset], lines[lineOffset + 1] - lines[lineOffset] - 1 );
 			//	Ignore empty lines
@@ -203,7 +206,7 @@ public:
 			}
 		}
 
-		std::size_t byteOffset = lines[lineOffset] - fileData + lineOffset + 1; // add lineOffset to account for extra carriage return characters
+		std::size_t byteOffset = lines[lineOffset + 1] - fileData + lineOffset + 1; // add lineOffset to account for extra carriage return characters
 
 		std::cout << "Done loading stores." << std::endl;
 		std::cout << "Freeing memory... ";

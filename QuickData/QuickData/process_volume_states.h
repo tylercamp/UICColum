@@ -45,7 +45,7 @@ void process_volume_states_largefile( const std::string & sourceMeshHeader )
 
 		std::int64_t offset = 0;
 		std::int64_t chunkSize;
-		int maxSize = 1024 * 1024 * 1024; // 1GB, the max size of data read and process at a time
+		size_t maxSize = 1024 * 1024 * 1024; // 1GB, the max size of data to read and process at a time
 		int i = 0;
 		do
 		{
@@ -55,7 +55,7 @@ void process_volume_states_largefile( const std::string & sourceMeshHeader )
 			//	If no data was loaded (max data size not large enough) try again with larger chunk size
 			while( chunkSize == 0 )
 			{
-				maxSize += (int) ( maxSize * 0.5 );
+				maxSize += (size_t) ( maxSize * 0.5 );
 				chunkSize = workflow_import_msh_header_cpu_part( sourceMeshHeader, maxSize, offset, &data, &timestamps );
 			}
 
