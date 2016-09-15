@@ -15,7 +15,7 @@
 #include "Workflows/ImportMshHeaderWorkflow.h"
 //#include "Workflows/ChunkExportFbxWorkflow.h"
 #include "Workflows/ChunkExportBinaryWorkflow.h"
-#include "Workflows/ImportAssimpWorkflow.h"
+//#include "Workflows/ImportAssimpWorkflow.h"
 #include "Workflows/RenderWorkflow.h"
 #include "Workflows/SmoothNormalsWorkflow.h"
 #include "Workflows/PartitionSchemeExportWorkflow.h"
@@ -77,20 +77,9 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 	std::string fileExt = toLower( getFileExtension( file ) );
 	if( fileExt == "stl" )
 	{
-		gpu_vertex_array * points;
-		gpu_index_array * indices;
-
 		workflow_import_stl( file, &tris );
-
-		//workflow_import_fbx( file, &points, &indices );
-		//workflow_import_stl( file, &points, &indices );
-		//workflow_gen_tris( points, indices, &tris );
-		//workflow_gen_normals( tris, invertNormals );
-		//workflow_smooth_normals( tris, points, indices );
-
-		//delete points;
-		//delete indices;
 	}
+	/*
 	else if( fileExt != "msh" )
 	{
 		gpu_vertex_array * points;
@@ -105,6 +94,7 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 		delete points;
 		delete indices;
 	}
+	*/
 	else
 	{
 		gpu_vertex_array * points;

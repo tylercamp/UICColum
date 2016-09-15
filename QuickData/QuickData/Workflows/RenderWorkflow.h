@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef _DEBUG
+
 #include "../Types.h"
 
 #include <Windows.h>
@@ -612,3 +614,5 @@ void workflow_render_volume_mesh( cpu_chunk_array * chunks, cpu_data_sequence_ar
 {
 	run_window( *chunks, *sequence );
 }
+
+#endif

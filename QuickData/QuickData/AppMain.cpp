@@ -40,15 +40,18 @@
 #endif
 
 //	Library references
+#pragma comment( lib, "winmm.lib" ) // For PlaySound() on task complete
+
+#ifdef _DEBUG
 #pragma comment( lib, "SDL2.lib" )
 #pragma comment( lib, "opengl32.lib" )
 #pragma comment( lib, "glu32.lib" )
-#pragma comment( lib, "winmm.lib" ) // For PlaySound() on task complete
 
 
 
 #pragma comment( lib, "assimp.lib" )
 #pragma comment( lib, "libfbxsdk.lib" )
+#endif
 
 #pragma warning( disable: 4018 ) // signed/unsigned mismatch
 #pragma warning( disable: 4244 ) // floating-point conversion warnings
@@ -114,8 +117,7 @@ int main( int argc, char * argv[] )
 		return 0;
 	}
 	*/
-	
-	
+
 	
 	//	VOXEL MATRIX TAGGING (NOT USED FOR CONVERSION OPS)
 #if 0
@@ -273,28 +275,28 @@ int main( int argc, char * argv[] )
 	if( jobList.size( ) == 0 )
 	{
 		jobList = {
-			
-			"patients/for-tyler/GAMBIT.CY.ch.msh", // success!
-			"patients/for-tyler/GAMBIT.CY.ig.msh", // success!
-			//"patients/for-tyler/GAMBIT.CY.kt.msh", // fail! (formatting!)
-			//"patients/for-tyler/GAMBIT.CY.mg2.msh", // fail! (formatting!)
-			"patients/for-tyler/GAMBIT.CY.nn.msh", // success! (previous failure likely due to incorrect point parsing)
-			//"patients/for-tyler/GAMBIT.CY.ben.msh", // fail gen_volume_normals!
+			//
+			//"patients/for-tyler/GAMBIT.CY.ch.msh", // success!
+			//"patients/for-tyler/GAMBIT.CY.ig.msh", // success!
+			////"patients/for-tyler/GAMBIT.CY.kt.msh", // fail! (formatting!)
+			////"patients/for-tyler/GAMBIT.CY.mg2.msh", // fail! (formatting!)
+			//"patients/for-tyler/GAMBIT.CY.nn.msh", // success! (previous failure likely due to incorrect point parsing)
+			////"patients/for-tyler/GAMBIT.CY.ben.msh", // fail gen_volume_normals!
 
 
-			"patients/for-tyler/bsSurf.msh",
-			"patients/for-tyler/chSurf.msh",
-			"patients/for-tyler/igSurf.msh",
-			"patients/for-tyler/ktSurf.msh",
-			"patients/for-tyler/mgSurf.msh",
-			"patients/for-tyler/nnSurf.msh",
+			//"patients/for-tyler/bsSurf.msh",
+			//"patients/for-tyler/chSurf.msh",
+			//"patients/for-tyler/igSurf.msh",
+			//"patients/for-tyler/ktSurf.msh",
+			//"patients/for-tyler/mgSurf.msh",
+			//"patients/for-tyler/nnSurf.msh",
 
 
-			"patients/KevinBestV7.GAMBIT.msh",
-			"patients/CNSTest-1-00051.dat.mm",
-			"patients/KK.msh",
-			"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
-			"msh-hexahedral/Grant2-10-00001.dat.mm",
+			//"patients/KevinBestV7.GAMBIT.msh",
+			//"patients/CNSTest-1-00051.dat.mm",
+			//"patients/KK.msh", // fail! (formatting!)
+			//"patients/KevinBestV7_ForGrant-11-2.0501.dat.mm",
+			/*"msh-hexahedral/Grant2-10-00001.dat.mm",
 			"msh-hexahedral/CYcutBAv3.GAMBIT.msh",
 			"patients/bs/bs",
 			"patients/ch/ch",
@@ -309,7 +311,7 @@ int main( int argc, char * argv[] )
 			"msh-hexahedral/IanArteries5.GAMBIT.msh",
 
 			"msh-tetrahedral/FullCNSINJ_V1.GAMBIT.msh",
-			"msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.mm",
+			"msh-tetrahedral/FullCNS_Drug_CellCenters_T1.dynamic.mm",*/
 		};
 	}
 
@@ -321,7 +323,12 @@ int main( int argc, char * argv[] )
 
 	for( auto job : jobList )
 	{
-		std::cout << "Starting job: " << job << std::endl;
+		time_t curTime;
+		time( &curTime );
+
+		auto localTime = localtime( &curTime );
+
+		std::cout << "Starting job: " << job << " at TIME " << localTime->tm_hour << ":" << localTime->tm_min << ":" << localTime->tm_sec << std::endl;
 
 		auto type = getFileExtension( job );
 		if( type == "" )
@@ -355,7 +362,7 @@ int main( int argc, char * argv[] )
 
 
 
-
+#ifdef _DEBUG
 
 void debug_render_output( const std::string & targetPath )
 {
@@ -496,3 +503,4 @@ void debug_render_volume_output( const std::string & meshesPath, const std::stri
 	workflow_render_volume_mesh( &chunks, &sequence );
 }
 
+#endif
