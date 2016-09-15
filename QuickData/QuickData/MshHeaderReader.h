@@ -250,7 +250,11 @@ public:
 				continue;
 			}
 
-			offset += ParseNextList( lines, offset );
+			int numLines = ParseNextList( lines, offset );
+			if( numLines == 0 )
+				break;
+
+			offset += numLines;
 		}
 
 		delete[] fileData;
