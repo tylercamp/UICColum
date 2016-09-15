@@ -19,6 +19,7 @@
 #include "Workflows/RenderWorkflow.h"
 #include "Workflows/SmoothNormalsWorkflow.h"
 #include "Workflows/PartitionSchemeExportWorkflow.h"
+#include "Workflows/ImportStlWorkflow.h"
 
 enum ExportMode {
 	EXPORT_BINARY
@@ -74,7 +75,23 @@ void process_mesh( const std::string & file, ExportMode exportMode, bool forceIn
 
 	//	Determine loading method
 	std::string fileExt = toLower( getFileExtension( file ) );
-	if( fileExt != "msh" )
+	if( fileExt == "stl" )
+	{
+		gpu_vertex_array * points;
+		gpu_index_array * indices;
+
+		workflow_import_stl( file, &tris );
+
+		//workflow_import_fbx( file, &points, &indices );
+		//workflow_import_stl( file, &points, &indices );
+		//workflow_gen_tris( points, indices, &tris );
+		//workflow_gen_normals( tris, invertNormals );
+		//workflow_smooth_normals( tris, points, indices );
+
+		//delete points;
+		//delete indices;
+	}
+	else if( fileExt != "msh" )
 	{
 		gpu_vertex_array * points;
 		gpu_index_array * indices;

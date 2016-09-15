@@ -107,6 +107,9 @@
     <ClInclude Include="Workflows\VoxelTagBoundariesWorkflow2.h">
       <Filter>Workflows</Filter>
     </ClInclude>
+    <ClInclude Include="Workflows\ImportStlWorkflow.h">
+      <Filter>Workflows\Import</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Utility">

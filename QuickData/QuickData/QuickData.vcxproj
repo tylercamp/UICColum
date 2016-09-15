@@ -93,6 +93,7 @@
   <ItemGroup>
     <ClInclude Include="BinaryMesh.h" />
     <ClInclude Include="BinaryVoxelMatrix.h" />
+    <ClInclude Include="Workflows\ImportStlWorkflow.h" />
     <ClInclude Include="MeshPartitionScheme.h" />
     <ClInclude Include="Workflows\VoxelMatrixDataExportWorkflow.h" />
     <ClInclude Include="Workflows\PartitionSchemeExportWorkflow.h" />
