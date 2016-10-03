@@ -1,5 +1,9 @@
 # UICColum
 
+Conversion software for the Walk-in-Brain project. Processes data into a format for quick consumption by a renderer.
+
+Developed as an in-class collaboration while studying at Columbia College Chicago.
+
 PROJECTS OVERVIEW
 
 - QuickData - Main conversion software
